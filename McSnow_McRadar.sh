@@ -37,7 +37,7 @@ export cur_dir=$(pwd -P) #current directory
 
 #define what this script should do
 if [ -z "$1" ]; then
-    execwhat="r0Mc0dat2nc0McRad0plot1" #recompile, McSnow, create ncdf with corresponding averages, PAMTRA, overview_panel #set 1 to activate and 0 to deactivate one of these steps
+    execwhat="r0Mc0dat2nc0McRad0plot1" #recompile, McSnow, create ncdf, McRadar, plot Output #set 1 to activate and 0 to deactivate one of these steps
 else #the following allows the user to define what the script should do by (currently 5) booleans
     execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5
     echo $execwhat
