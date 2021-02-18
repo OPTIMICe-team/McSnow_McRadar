@@ -25,7 +25,7 @@ dataXR['sMice'].attrs={'units':'kg','long_name':'ice mass of superparticle'}
 dataXR['sVice'].attrs={'units':'m^3','long_name':'ice volume of superparticle'}
 dataXR['sPhi'].attrs={'units':'','long_name':'aspect ratio of superparticle'}
 dataXR['sRhoIce'].attrs={'units':'kg/m^3','long_name':'density of ice of superparticle'}
-dataXR['igf'].attrs={'units':'','long_name':''}
+dataXR['igf'].attrs={'units':'','long_name':'inherent growth function'}
 dataXR['sNmono'].attrs={'units':'','long_name':'number of monomers of superparticle'}
 dataXR['sMrime'].attrs={'units':'kg','long_name':'rime mass of superparticle'}
 dataXR['sVrime'].attrs={'units':'m^3','long_name':'rime volume of superparticle'}
@@ -34,3 +34,5 @@ dataXR['sMult'].attrs={'units':'','long_name':'multiplicity of superparticle'}
 #save as nc
 dataXR.to_netcdf(inputPath+'mass2fr.nc')
 
+#remove .dat file
+os.remove(inputPath+'mass2fr.dat')
