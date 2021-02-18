@@ -31,7 +31,7 @@ print('loading the settings')
 #In order to avoid volume sampling problems, you have to insert the gridBaseArea as it was defined in the McSnow simulation
 dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
                                #'../data/1d_habit_test_leonie.dat',#'../data/habit_1d_leonie.dat',#'../data/1d_habit_test_leonie.dat',#'../tests/data_test.dat',
-                               elv=30, freq=freq,gridBaseArea=5.0,maxHeight=3850,ndgsVal=50,heightRes=50,scatSet={'mode':'full', 'safeTmatrix':False})
+                               elv=30, freq=freq,gridBaseArea=5.0,maxHeight=2400,ndgsVal=50,heightRes=50,scatSet={'mode':'full', 'safeTmatrix':False})
 
 print('loading the McSnow output')
 # now generate a table from the McSnow output. You can specify xi0, if it is not stored in the table (like in my cases)
