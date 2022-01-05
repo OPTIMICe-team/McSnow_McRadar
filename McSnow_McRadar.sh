@@ -34,12 +34,14 @@ export MC=/work/lvonterz/McSnow_habit/mcsnow/ #foldder of mcsnow
 export McR=/work/lvonterz/McRadar/notebooks/ # folder were my McRadar notebooks are
 export MCexp=/work/lvonterz/McSnow_habit/  # folder where to store output 
 export cur_dir=$(pwd -P) #current directory
-
+export cry_dir=/work/lvonterz/pol-scatt/DDA_compute
+export freq=35.5 #5.6 #9.6 #35.5 #9.6
+export scatMode=SSRGA
 #define what this script should do
 if [ -z "$1" ]; then
-    execwhat="r0Mc0dat2nc0McRad0plot1" #recompile, McSnow, create ncdf, McRadar, plot Output #set 1 to activate and 0 to deactivate one of these steps
+    execwhat="r0Mc0dat2nc0McRad0plot1gencry0" #recompile, McSnow, create ncdf, McRadar, plot Output #set 1 to activate and 0 to deactivate one of these steps
 else #the following allows the user to define what the script should do by (currently 5) booleans
-    execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5
+    execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5"gencry"$6
     echo $execwhat
 fi
 ######
@@ -61,7 +63,7 @@ do
     ###########################################################
     #loop over different namelist settings (relevant for running McSnow not for plotting)
     ##########################################################
-    ssat_array=(30) #(0 10 20 30 40 50)  #supersaturation over ice: [1/1000] -> 1 is 0.001
+    ssat_array=(50) #(0 10 20 30 40 50)  #supersaturation over ice: [1/1000] -> 1 is 0.001
     stick_array=(2) #sticking efficiency: 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
     ncl_array=(10) #(10 20 50) #nucleation rate [3/100 SP/sm3] #setting a high numer gets expensive (CPU-time and memory!); compensate this by a high multiplicity (xi0 in runscript: McSnow_runscripts/1d_bimodal2mode)
     nclmass_array=(10) #(100 1000 5000) #
@@ -142,9 +144,11 @@ do
         echo "############"
 
         cd $cur_dir
+        #python3 plot_PSD.py
+        #python3 plotModObs.py
+        #python3 plot_agg_kernel.py
         python3 plot_output.py # sofar this produces plots of the McRadar moments and spectra, aswell as the aspect ratios in spectral form
-
-        #the next two lines I used for plotting McSnow model output  (if you need something like this just ask me, they are not clean, but we might get them running)
+            #the next two lines I used for plotting McSnow model output  (if you need something like this just ask me, they are not clean, but we might get them running)
 #        python overview_panel.py 
         #python3 plot_fluxes_and_densities.py # this plots the fluxes and densities of the McSnow output
         
@@ -152,6 +156,19 @@ do
 #        python bimodalitystudy_DWRs.py
 #        python plot_spectra_and_moments.py
 #        python plot_aggregation.py
+    fi
+    
+    
+    if  [[ "$execwhat" == *gencry1* ]] ; then #generate crystals with aspect ratio and size of McSnow particle
+        echo "############"
+        echo "test convolution"
+        echo "############"
+        #cd $cry_dir        
+        #python3 generate_single_generic_crystal.py
+        cd $cur_dir
+        python3 test_convolution.py       
+        
+
     fi                 
 
 
