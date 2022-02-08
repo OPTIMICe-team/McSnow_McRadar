@@ -81,7 +81,7 @@ fi
 # suffix for the output directory
 SUFFNAME="${model_setup}_dendrite_habit${sp_habit}_frag${sp_frag}_xi${xi0}_nz${nz}_lwc${lwc}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}_nucltype0" 
 SUFFNAME="${SUFFNAME}_nrp${nrp}_rm${wdm}_rt${rt}_vt${vt}_coll_kern${coll_kern}_at${agg}_stick${stick}_dt${dep}_geo${geo}"
-SUFFNAME="${SUFFNAME}_h${h1}-${h2}_ba${box_area}_domtop${dom_top}_atmo${atmo}_20181216_RHw100_bndtype_8a5bc423_mo_mass2diam7d47a19" #e68126eb" #_dt600s_500m_inilayer_1Inisize_colleffi1_modeponew" #_100RHi_CT" #_20190122_rhi105"
+SUFFNAME="${SUFFNAME}_h${h1}-${h2}_ba${box_area}_domtop${dom_top}_atmo${atmo}" #e68126eb" #_dt600s_500m_inilayer_1Inisize_colleffi1_modeponew" #_100RHi_CT" #_20190122_rhi105"
 if [ "$1" == "onlyname" ]; then echo ${0##*/}_${SUFFNAME}; exit ; else echo "not_there"; fi
 
 # scaled variables
