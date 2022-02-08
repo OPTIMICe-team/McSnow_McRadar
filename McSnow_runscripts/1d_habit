@@ -28,18 +28,20 @@ set -e
 export OMP_NUM_THREADS=4
 
 # pre-scaled variables
-dom_top="3850."  # [m]
+dom_top="3000."  # [m]
 dom_bottom="0."
 nz=200           # number of vertical cells
-xi0=1000          # [RP/SP]
+xi0=100          # [RP/SP]
 dtc=5            # [s]
-nrp=5            # [1000 RP/m3]
+nrp=2           # [1000 RP/m3]
 lwc="0"          # [1/10000 kg/m3]
-iwc="7"          # [1/100000 kg/m3]
+iwc="1"          # [1/100000 kg/m3]5 0.0001
 box_area="500"   # [1/100 m2]
 wdm=10           # [10**-6 kg/m3]
-h1=$6 #10            # [100 m]
+h1=$6 #10            # [100 m] height of supercooled liquid water layer
 h2=$7 #20            # [100 m]
+#nh1=3000        # height of the second nucleation layer 
+#nh2=3400
 if [[ $7 -gt $6 ]]; then #if riming in setup
 	rt=1             # rime type: 0-no-riming, 1-cont, 2-stoch
 else
@@ -52,13 +54,18 @@ vt=3             # terminal velocity: 1) Heymsfield, 2) Khvorostyanov 3) Boehm
 geo=3            # snow geometry: 1: bulk, 2: fillin, 3: similarity
 agggeo=$5         # ! 1: only aggregates, 2:Joses favorite monomers and aggregates, 3: monomer dependent plates (not really implemented here)
 if [[ "$agggeo" -eq 9999 ]] ; then agggeo=1 ; fi
-agg=0            # 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
+agg=2          # 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
 dep=1            # 0: no diffusion, 1: vapour diffusion
-meltt=0           # 0: no melting, 1: melting activated
+meltt=1           # 0: no melting, 1: melting activated
 multt=0          # 0: no ice multiplication, 1: rime splintering
 coll_effi=1      # 0:constant, 1:Boehm
-sp_geo=2         #1:Dmax, 2:Area
+coll_kern=0         #0:Area, 1:Dmax
 stick=$3		 # 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
+sp_habit=1       # 0: mD-relation, 1:habit
+sp_frag=0        # 0: no fragmentation, 1: fragmentation
+atmo=1
+nugam=-0.52 #1.0    # exponent of gamma distribution used to be 3.545
+mugam=0.47 #1.0  # used to be 0.455
 if [[ "$stick" -eq 9999 ]] ; then stick=1 ; fi #ssat [1/1000]
 ssat=$2 #read ssat from governing script or set default in next line to 0.01 if ssat is set to 9999 #ssat [1/1000]
 if [[ "$ssat" -eq 9999 ]] ; then ssat=100 ; fi #ssat [1/1000]
@@ -69,11 +76,12 @@ if [[ "$5" -eq 1 ]]; then agggeo_string="constant"
 elif [[ "$5" -eq 2 ]]; then agggeo_string="binary"
 elif [[ "$5" -eq 3 ]]; then agggeo_string="monodep"
 fi
+# change starting aspect ratio in mo_sp_types line 58!!!
 
 # suffix for the output directory
-SUFFNAME="${model_setup}_${agggeo_string}_xi${xi0}_nz${nz}_lwc${lwc}_iwc${iwc}_ncl${ncl}_nclmass${nclmass}_ssat${ssat}_dtc${dtc}" 
-SUFFNAME="${SUFFNAME}_nrp${nrp}_rm${wdm}_rt${rt}_vt${vt}_at${agg}_stick${stick}_dt${dep}"
-SUFFNAME="${SUFFNAME}_h${h1}-${h2}_ba${box_area}"
+SUFFNAME="${model_setup}_dendrite_habit${sp_habit}_frag${sp_frag}_xi${xi0}_nz${nz}_lwc${lwc}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}_nucltype0" 
+SUFFNAME="${SUFFNAME}_nrp${nrp}_rm${wdm}_rt${rt}_vt${vt}_coll_kern${coll_kern}_at${agg}_stick${stick}_dt${dep}_geo${geo}"
+SUFFNAME="${SUFFNAME}_h${h1}-${h2}_ba${box_area}_domtop${dom_top}_atmo${atmo}_20181216_RHw100_bndtype_8a5bc423_mo_mass2diam7d47a19" #e68126eb" #_dt600s_500m_inilayer_1Inisize_colleffi1_modeponew" #_100RHi_CT" #_20190122_rhi105"
 if [ "$1" == "onlyname" ]; then echo ${0##*/}_${SUFFNAME}; exit ; else echo "not_there"; fi
 
 # scaled variables
@@ -124,16 +132,16 @@ test_case_name = ${0##*/}
   bnd_type   = 2              ! 0: zero flux, 1: const xi=xi0, 2: xi ~ flux cdf 4: use 2mom for calculating fluxes
   snowgeo_type = ${geo}       ! 1: bulk, 2: fillin, 3: similarity
 !  agggeo_type = ${agggeo}     ! 1: M96 mixed agg, 2: MK96 plates + M96 mixed agg, 3: monomer dependent plates
-  nucl_type  = 1              ! 0: off, 1: constant, 2: Meyers scheme
+  nucl_type  = 0              ! 0: off, 1: constant, 2: Meyers scheme
   rime_type  = ${rt}          ! 0: no riming, 1: continuous, 2: stochastic
   multiplication_type = ${multt} ! 0: no ice multiplication, 1: rime splintering
   diffusion_type =${dep}      ! 0: no diffusion, 1: vapour diffusion
   mergeNoTresh  = 1000        ! number of super-particles per cell, if threshold is exceeded, similar particle get merged
   mergeRatioLimit = 0.0      ! mass ratio below which two similar drops get merged
   melt_type  = ${meltt}        ! 0: no melting, 1: melting activated
-  time_end   = 36000.         ! [s] end time
-  dt_1dprof  = 600. !1800.          ! [s] time step for output to file
-  dt_2dprof  = 7200.          ! [s] time step for output to file
+  time_end   = 36000.         ! [s] end time 36000
+  dt_1dprof  = 1800. !600. !1800.          ! [s] time step for output to file
+  dt_2dprof  = 600.          ! [s] time step for output to file
 /
 &sp_nml
   iwc         = ${iwc}      ! [kg/m3] ice water content
@@ -142,8 +150,8 @@ test_case_name = ${0##*/}
   nrp0        = ${nrp}        ! [1/m3] initial number density of ice particles
 !  nrp0_mode2        = 0 !2mode is active via nucleation but switched off here!  ! [1/m3] initial number density of ice particles
   xi0         = ${xi0}        ! [1] number of RP per SP
-  nu_gam      = 3.545           ! [1] gamma distribution exponent
-  mu_gam      = 0.455           ! [1] generalized gamma distribution exponent 
+  nu_gam      = ${nugam}      ! [1] gamma distribution exponent
+  mu_gam      = ${mugam}           ! [1] generalized gamma distribution exponent 
 !  nu_gam_mode2      = -0.3564           ! [1] gamma distribution exponent
 !  mu_gam_mode2      =  0.495          ! [1] generalized gamma distribution exponent 
   maxTotalNoSps = 10240000
@@ -151,8 +159,8 @@ test_case_name = ${0##*/}
   !idtmc       = 1             ! [1] (dtm=dtc/idtmc) dtm is time step of sedi.
   idtgm       = 1             ! [1] (dtg=dtm/idtgc) dtg is time step of cond./depo.
   sigma0      = 0.62          ! kernel density estimation factor
-  nclrate     = ${ncl}        ! [SP/s] num. new SP in 'nucleation zone' (1d-model)
-  nclmass     = ${nclmass}    !should be 1...e-9 from Joses calculations       ! mean mass of particles after nucleation
+!  nclrate     = ${ncl}        ! [SP/s] num. new SP in 'nucleation zone' (1d-model)
+!  nclmass     = ${nclmass}    !should be 1...e-9 from Joses calculations       ! mean mass of particles after nucleation
   rm          = ${wdm}        ! [m] mean droplet radius in the 1d-model ice particle riming 
   sp_vterm_id = ${vt}         ! 1:Heymsfield, 2:Khvorostyanov, 3: Boehm
   agg_hist    = -1            ! <0: no history, 0: history with near surface sampling, >0: history with the whole domain sampling
@@ -160,7 +168,9 @@ test_case_name = ${0##*/}
   sp_stick_effi =  ${stick}   ! 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
   !sp_kernel_geo = ${sp_geo}   ! 1: Dmax-kernel, 2:Area-based
   !sp_coll_effi = ${coll_effi} ! 0: constant, 1:Boehm's parameterization
-  sp_habit = 1                ! 0: m-D-relation, 1: habit prediciton
+!  coll_kern_type = ${coll_kern} ! 0: Area based, 1: Dmax
+  sp_habit = ${sp_habit}                ! 0: m-D-relation, 1: habit prediciton
+!  sp_frag=${sp_frag}           ! 0: no fragmentation, 1: fragmentation
 /
 &grid_nml
   dom_top    = ${dom_top}     ! [m]  domain top
@@ -169,12 +179,12 @@ test_case_name = ${0##*/}
   nz         = ${nz}          ! [1]  number of vertical grid cells
 /
 &atmo_nml
-  atmo_type  = 1              ! 1: idealized profiles; 2: ECMWF profiles
+  atmo_type  = ${atmo}              ! 1: idealized profiles; 2: ECMWF profiles
   ssat       = ${ssat}           ! [1] saturation
   h1         = ${h1}
   h2         = ${h2}
-  !nh1        = 3000 
-  !nh2        = 3400
+!  nh1        = ${nh1} 
+!  nh2        = ${nh2}
 /
 EOF
 
