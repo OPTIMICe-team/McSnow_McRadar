@@ -18,7 +18,7 @@ print(data)
 #quit()
 # converting pandas dataframe into xarray to add attrs and save into netcdf
 dataXR = data.to_xarray()
-dataXR['time'].attrs={'units':'s','long_name':'seconds since start of simulation'}
+dataXR['time'].attrs={'units':'min','long_name':'minutes since start of simulation'}
 dataXR['mTot'].attrs={'units':'kg','long_name':'total mass of superparticle (ice+rime+liquid)'}
 dataXR['mTot'].attrs={'units':'kg','long_name':'total mass of superparticle (ice+rime+liquid)'}
 dataXR['sHeight'].attrs={'units':'m','long_name':'height of superparticle'}
