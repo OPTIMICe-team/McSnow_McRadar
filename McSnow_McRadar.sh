@@ -39,9 +39,9 @@ export freq=35.5 #5.6 #9.6 #35.5 #9.6
 export scatMode=SSRGA
 #define what this script should do
 if [ -z "$1" ]; then
-    execwhat="r0Mc0dat2nc0McRad0plot1gencry0" #recompile, McSnow, create ncdf, McRadar, plot Output #set 1 to activate and 0 to deactivate one of these steps
+    execwhat="r0Mc0dat2nc0McRad0plot1" #recompile, McSnow, create ncdf, McRadar, plot Output #set 1 to activate and 0 to deactivate one of these steps
 else #the following allows the user to define what the script should do by (currently 5) booleans
-    execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5"gencry"$6
+    execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5
     echo $execwhat
 fi
 ######
@@ -133,9 +133,6 @@ do
         echo "run McRadar"
         echo "############"
         cd $cur_dir
-        #cp calc.py $PAM
-        #cd $PAM
-        #run PAMTRA
         python3 calc_McRadar_output.py
     fi
      if [[ "$execwhat" == *plot1* ]] ; then #produce quicklook of McSnow and the corresponding McRadar run
@@ -144,33 +141,12 @@ do
         echo "############"
 
         cd $cur_dir
-        #python3 plot_PSD.py
-        #python3 plotModObs.py
-        #python3 plot_agg_kernel.py
         python3 plot_output.py # sofar this produces plots of the McRadar moments and spectra, aswell as the aspect ratios in spectral form
-            #the next two lines I used for plotting McSnow model output  (if you need something like this just ask me, they are not clean, but we might get them running)
-#        python overview_panel.py 
-        #python3 plot_fluxes_and_densities.py # this plots the fluxes and densities of the McSnow output
         
-#        export plot_totalice="False"
-#        python bimodalitystudy_DWRs.py
-#        python plot_spectra_and_moments.py
-#        python plot_aggregation.py
     fi
     
     
-    if  [[ "$execwhat" == *gencry1* ]] ; then #generate crystals with aspect ratio and size of McSnow particle
-        echo "############"
-        echo "test convolution"
-        echo "############"
-        #cd $cry_dir        
-        #python3 generate_single_generic_crystal.py
-        cd $cur_dir
-        python3 test_convolution.py       
-        
-
-    fi                 
-
+    
 
     done #for ssat
     done #for stick
@@ -178,6 +154,4 @@ do
     done #for nclmass
 done #for testcase
 
-
-cd $BIMOD #go back to start directory
 
