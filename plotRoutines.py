@@ -309,39 +309,90 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False):
             
         plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
         plt.close()
-def plotDWRs(dicSettings,output,inputPath,convoluted=False):
-    for wl in dicSettings['wl']:
-        wlStr = '{:.2e}'.format(wl)
-        if convoluted == True:
-          saveName = '1d_habit_DWR_{wl1}{wl2}_convoluted_{mode}.png'.format(wl1=wlStr1,wl2=wlStr2,mode=dicSettings['scatSet']['mode'])
+def plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False):
+    #for wl in dicSettings['wl']:
+    #wlStr1 = '{:.2e}'.format(dicSettings['wl'][0])
+    #wlStr2 = '{:.2e}'.format(dicSettings['wl'][1])
+    if convoluted == True:
+      saveName = '1d_habit_DWR_{freq1}_{freq2_convoluted_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
           
-          fig,axes = plt.subplots(figsize=(5,5))
-           # plot ZDR
-          output['MDV_H_{0}'.format(wlStr)].plot(ax=axes[0],y='range', lw=2)
-          axes.set_title('rad: {0} elv: {1}, DWR'.format(wlStr, dicSettings['elv']))
-          #axes[0].set_ylim(0, 5000)
-          axes.grid(True,ls='-.')
-          axes.set_xlabel('DWR {wl1}{wl2} [dB]'.format(wl1=wlStr1,wl2=wlStr2))
-          axes.set_ylim([0,dicSettings['maxHeight']])
+      fig,axes = plt.subplots(figsize=(5,5))
+      DWR = mcr.lin2db(output['Ze_H_{0}'.format(wlStr1)]) - mcr.lin2db(output['Ze_H_{0}'.format(wlStr2)])
+      DWR.plot(ax=axes,y='range', lw=2)
+      axes.set_title('DWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
+      #axes[0].set_ylim(0, 5000)
+      axes.grid(True,ls='-.')
+      axes.set_xlabel('DWR {freq1}_{freq2} [dB]'.format(freq1=freq1,freq2=freq2))
+      axes.set_ylim([0,dicSettings['maxHeight']])
           
-        else: 
-          saveName = '1d_habit_DWR_{wl1}{wl2}_{mode}.png'.format(wl1=wlStr1,wl2=wlStr2,mode=dicSettings['scatSet']['mode'])
+    else: 
+      freq1 = (constants.c / float(wlStr1))  *1e3 / 1e9
+      freq2 = (constants.c / float(wlStr2))  *1e3 / 1e9
+      freq1 = '{:.1f}'.format(freq1)
+      freq2 = '{:.1f}'.format(freq2)
+      
+      saveName = '1d_habit_DWR_{freq1}_{freq2}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
            
-          fig,axes = plt.subplots(figsize=(5,5))
-          output['MDV_H_{0}'.format(wlStr)].plot(ax=axes[0],y='range', lw=2)
-          axes.set_title('DWR_{wl1}{wl2}'.format(wl1=wlStr1, wl2=wlStr2))
-          #axes[0].set_ylim(0, 5000)
-          axes.grid(True,ls='-.')
-          axes.set_xlabel('DWR {wl1}{wl2} [dB]'.format(wl1=wlStr1,wl2=wlStr2))
-          axes.set_ylim([0,dicSettings['maxHeight']])
-        
-          plt.tight_layout()
-              
-              
-        
-            
-        plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
-        plt.close()
+      fig,axes = plt.subplots(figsize=(5,5))
+      Ze1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)].sum(dim='vel'))
+      Ze2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)].sum(dim='vel'))
+      DWR = Ze1 - Ze2
+      DWR.plot(ax=axes,y='range', lw=2)
+      axes.set_title('DWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
+      #axes[0].set_ylim(0, 5000)
+      axes.grid(True,ls='-.')
+      axes.set_xlabel('DWR {freq1}_{freq2} [dB]'.format(freq1=freq1,freq2=freq2))
+      axes.set_ylim([0,dicSettings['maxHeight']])
+                              
+    plt.tight_layout()        
+    plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
+    plt.close()
+def plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False):
+    #for wl in dicSettings['wl']:
+    #wlStr1 = '{:.2e}'.format(dicSettings['wl'][0])
+    #wlStr2 = '{:.2e}'.format(dicSettings['wl'][1])
+    if convoluted == True:
+      saveName = '1d_habit_sDWR_{freq1}_{freq2_convoluted_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+          
+      fig,axes = plt.subplots(figsize=(5,5))
+      specH1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)])
+      specH1 = specH1.where(specH1 > -40)
+      specH2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)])
+      specH2 = specH2.where(specH2 > -40)
+      
+      DWR =specH1 - specH2
+      DWR.plot(ax=axes,y='range', vmin=0, vmax=15, cmap=getNewNipySpectral(),cbar_kwargs={'label':'sDWR [dB]'})
+      axes.set_title('sDWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
+      #axes[0].set_ylim(0, 5000)
+      axes.grid(True,ls='-.')
+      axes.set_xlabel('DWR {freq1}_{freq2} [dB]'.format(freq1=freq1,freq2=freq2))
+      axes.set_ylim([0,dicSettings['maxHeight']])
+      axes.set_xlim(-2, 0)
+    else: 
+      freq1 = (constants.c / float(wlStr1))  *1e3 / 1e9
+      freq2 = (constants.c / float(wlStr2))  *1e3 / 1e9
+      freq1 = '{:.1f}'.format(freq1)
+      freq2 = '{:.1f}'.format(freq2)
+      
+      saveName = '1d_habit_sDWR_{freq1}_{freq2}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+           
+      fig,axes = plt.subplots(figsize=(5,5))
+      specH1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)])
+      specH1 = specH1.where(specH1 > -40)
+      specH2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)])
+      specH2 = specH2.where(specH2 > -40)
+      
+      DWR =specH1 - specH2
+      DWR.plot(ax=axes,y='range', vmin=0, vmax=15, cmap=getNewNipySpectral(),cbar_kwargs={'label':'sDWR [dB]'})
+      axes.set_title('sDWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
+      #axes[0].set_ylim(0, 5000)
+      axes.grid(True,ls='-.')
+      axes.set_xlabel('DWR {freq1}_{freq2} [dB]'.format(freq1=freq1,freq2=freq2))
+      axes.set_ylim([0,dicSettings['maxHeight']])
+      axes.set_xlim(-2, 0)                        
+    plt.tight_layout()        
+    plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
+    plt.close()
 
 def plotSpectra(dicSettings,output,inputPath,convoluted=False):
     for wl in dicSettings['wl']:
