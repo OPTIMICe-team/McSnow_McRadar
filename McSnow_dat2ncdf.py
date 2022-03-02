@@ -1,5 +1,5 @@
 '''
-this script creates ncdf data from McSnows mass2fr..dat file with the original and some postprocessed variables (like temporal averages)
+this script creates ncdf data from McSnows mass2fr.dat file and removes the .dat file to save disk space
 '''
 import numpy as np
 import pandas as pd
