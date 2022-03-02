@@ -12,7 +12,7 @@ inputPath = os.environ['MCexp']+'experiments/'+experimentID+'/'
 
 #inputPath = '/work/lvonterz/McSnow_habit/experiments/Jan_Niklas_frag_Leonie_setup/'
 
-data = pd.read_csv(inputPath+'mass2fr.dat',header=None,skiprows=1,names=['time','mTot','sHeight','vel','dia','area','sMice','sVice','sRhoIce','igf','sNmono','sMrime','sVrime','sMult'])
+data = pd.read_csv(inputPath+'mass2fr.dat',header=None,names=['time','mTot','sHeight','vel','dia','area','sMice','sVice','sRhoIce','igf','sNmono','sMrime','sVrime','sMult'])
 data.columns = data.columns.str.replace(' ','')
 print(data)
 #quit()
