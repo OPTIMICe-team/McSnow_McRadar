@@ -4,24 +4,21 @@
 
 # THIS SCRIPT DOES ALL THE WORK: 
 #- compiling and running McSnow 
-#- run PAMTRA on the output
-#- plot the output of McSNow and PAMTRA
+#- run McRadar on the output
+#- plot the output of McSNow and McRadar
 # 
 
 #############
-# you might not always need to do all together (McSnow+PAMTRA+ plotting)
+# you might not always need to do all together (McSnow+McRadar+ plotting)
 #, so you can give some input arguments to deactivate some of the procedures: e.g. "bash McSnow_Pamtra_quicklooks_bimodalityexp.sh 1 0 0 0 0" will only compile McSnow
 #INPUT ARGUMENTS: Boolean (0) dont do (1) do
 #$1 RECOMPILE
 #$2 RUN MCSNOW
 #$3 CREATE NCDF FROM MCSNOW RUN
-#$4 RUN PAMTRA
+#$4 RUN McRadar
 #$5 DO PLOTTING
 #
-#
-# choose carefully:     - is recompiling necessary
-#                       - which script to run (line below #select which script to run) and the namelist of this script (the script will create a new directory for different namelist parameters (but not for all?)
-#                       -select timestep of output with tstep 
+# 
 #############
 if [ "$2" == "1" ]; then #McSnow can somehow not be run with open evince instances in certain folders
     killall evince #otherwise there is an "directory not empty" error
@@ -29,14 +26,11 @@ fi
 
 set -e #exit if error occurs
 
-#if cheops is shut down use old folder for tests
 export MC=/work/lvonterz/McSnow_habit/mcsnow/ #foldder of mcsnow
 export McR=/work/lvonterz/McRadar/notebooks/ # folder were my McRadar notebooks are
 export MCexp=/work/lvonterz/McSnow_habit/  # folder where to store output 
 export cur_dir=$(pwd -P) #current directory
-export cry_dir=/work/lvonterz/pol-scatt/DDA_compute
-export freq=35.5 #5.6 #9.6 #35.5 #9.6
-export scatMode=SSRGA
+
 #define what this script should do
 if [ -z "$1" ]; then
     execwhat="r0Mc0dat2nc0McRad0plot1" #recompile, McSnow, create ncdf, McRadar, plot Output #set 1 to activate and 0 to deactivate one of these steps
@@ -45,18 +39,15 @@ else #the following allows the user to define what the script should do by (curr
     echo $execwhat
 fi
 ######
-# choose setup (testcase)
+# choose setup of McRadar
 ######
+export freq=35.5 #5.6 #9.6 #35.5 #9.6
+export scatMode=SSRGA
 ###
 #use next line to plot McSnow runs with different geometries
 ###
 export McSnow_testcase=("habit") 
 export adapt_version=3
-#switch of processes (for McSnow this is so far not used)
-export switch_off_processes_list=("_") # "_noicesnow_nosnowself" "_nosnowself" "_noicesnow") # _noiceself, _noicesnow, _nosnowself
-
-#define which frequencies you want to forward simulate
-#export frequ
 
 for testcase in "${McSnow_testcase[@]}"
 do
