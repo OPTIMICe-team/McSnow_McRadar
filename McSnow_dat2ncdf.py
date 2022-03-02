@@ -12,7 +12,7 @@ inputPath = os.environ['MCexp']+'experiments/'+experimentID+'/'
 
 #inputPath = '/work/lvonterz/McSnow_habit/experiments/Jan_Niklas_frag_Leonie_setup/'
 
-data = pd.read_csv(inputPath+'mass2fr.dat',header=0)#None,skiprows=1,names=['time','mTot','sHeight','vel','dia','area','sMice','sVice','sPhi','sRhoIce','igf','sNmono','sMrime','sVrime','sMult'])
+data = pd.read_csv(inputPath+'mass2fr.dat',header=None,skiprows=1,names=['time','mTot','sHeight','vel','dia','area','sMice','sVice','sRhoIce','igf','sNmono','sMrime','sVrime','sMult'])
 data.columns = data.columns.str.replace(' ','')
 print(data)
 #quit()
@@ -27,7 +27,7 @@ dataXR['dia'].attrs={'units':'m','long_name':'maximum dimension of superparticle
 dataXR['area'].attrs={'units':'m^2','long_name':'projected area of superparticle'}
 dataXR['sMice'].attrs={'units':'kg','long_name':'ice mass of superparticle'}
 dataXR['sVice'].attrs={'units':'m^3','long_name':'ice volume of superparticle'}
-dataXR['sPhi'].attrs={'units':'','long_name':'aspect ratio of superparticle'}
+#dataXR['sPhi'].attrs={'units':'','long_name':'aspect ratio of superparticle'}
 dataXR['sRhoIce'].attrs={'units':'kg/m^3','long_name':'density of ice of superparticle'}
 dataXR['igf'].attrs={'units':'','long_name':'inherent growth function'}
 dataXR['sNmono'].attrs={'units':'','long_name':'number of monomers of superparticle'}
