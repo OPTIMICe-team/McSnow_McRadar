@@ -3,27 +3,6 @@
 #  run script for
 #  validating the SPM implementation on ice particles
 #
-#  tcase_id  103
-#    runs 1d model with a BND zone container on top of the domain.
-#    Initially, particles are located in three 10m-cells above 
-#    the top domain boundary and generated every few seconds 
-#    to maintain the constant -nrp0- number in the three levels
-#    during the run.
-#
-#    This test case is meant to:
-#    
-#    a) exploid more realistic setting with constant influx of ice particles
-#       falling through the top boundary;
-#
-#    b) examine the convergence of the SDM method under sedimentation, 
-#       deposition/sublimation, riming, and aggregation;
-#
-#    c) investigatate the influence vertical resolution by varying 'nz'
-#       for a given height.
-#
-#    d) test storing of the agrregation history (agg_hist >= 0)
-
-
 set -e
 export OMP_NUM_THREADS=4
 
@@ -88,9 +67,8 @@ fi
 # name of the experiment
 SUFFNAME="${model_setup}_habit${sp_habit}_IGF${IGF}_xi${xi0}_nz${nz}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}" 
 SUFFNAME="${SUFFNAME}_nrp${nrp}_vt${vt}_coll_kern${coll_kern}_at${agg}_stick${stick}_colleffi${coll_effi}_dt${dep}_bndtype${bndtype}"
-#SUFFNAME="${SUFFNAME}_nh1${nh1}_nh2${nh2}_nclmass${nclmass}_ncl${ncl}_aggmode_above"
-#SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
-SUFFNAME="${SUFFNAME}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
+SUFFNAME="${SUFFNAME}_nh1${nh1}_nh2${nh2}_nclmass${nclmass}_ncl${ncl}"
+SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
 
 
 if [ "$1" == "onlyname" ]; then echo ${0##*/}_${SUFFNAME}; exit ; else echo "not_there"; fi

@@ -45,9 +45,9 @@ export singleParticle=False
 export McRadarfileName="${freq}GHz_output_${scatMode}_${particle}_${elv}_convolute${convolute}_singleParticle${singleParticle}.nc"
 #define what this script should do
 if [ -z "$1" ]; then
-    execwhat="r0Mc0dat2nc0McRad0plot1plotNCL0"  #recompile, McSnow, create ncdf, McRadar, plot Output, plotNCL output #set 1 to activate and 0 to deactivate one of these steps
+    execwhat="r0Mc0dat2nc0McRad0plot1"  #recompile, McSnow, create ncdf, McRadar, plot Output, #set 1 to activate and 0 to deactivate one of these steps
 else #the following allows the user to define what the script should do by (currently 5) booleans
-    execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5"plotNCL"$6
+    execwhat="r"$1"Mc"$2"dat2nc"$3"McRad"$4"plot"$5
     echo $execwhat
 fi
 ######
@@ -67,7 +67,7 @@ do
     ssat_array=(50) #(0 10 20 30 40 50)  #supersaturation over ice: [1/1000] -> 1 is 0.001
     stick_array=(2) #sticking efficiency: 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
     ncl_array=(50) #(10 20 50) #nucleation rate [10^-4 SP/sm3] #setting a high numer gets expensive (CPU-time and memory!); compensate this by a high multiplicity (xi0 in runscript: McSnow_runscripts/1d_bimodal2mode)
-    nclmass_array=(1) #(100 1000 5000) # *10**-11 if using mass distr. change nclmass in 1d_habit # TODO: right now the setup calculated mtot from distribution of Dmax and aspect ratio!!
+    nclmass_array=(1) #(100 1000 5000) # *10**-11 if using mass distr. change nclmass in 1d_habit 
     McSnow_geom="2" # 1.constant 2.binary 3.monodep #we need binary here
     len_namelistcomb=${#ssat_array[@]}
     domTop_array=(5000) #(2700 2500 2300 2100) # change domain top
@@ -164,26 +164,10 @@ do
         echo "############"
 
         cd $cur_dir
-        #python3 plot_PSD.py
-        #python3 plotModObs.py
-        #python3 plot_agg_kernel.py
-        #for (( i_minmax = 0 ; i_minmax < ${#minmax_array[@]} ; i_minmax++ )); do
-        #export minmax=${minmax_array[$i_minmax]}
-        python3 plot_output.py # sofar this produces plots of the McRadar moments and spectra, aswell as the aspect ratios in spectral form
-        #done # for minmax
-    fi
-    if [[ "$execwhat" == *plotNCL1* ]] ; then #produce quicklook of McSnow and the corresponding McRadar run
-        echo "############"
-        echo "plotting nclscript"
-        echo "############"
-
-        cd $postMcSnowDir
-        echo $(pwd -P)
-        ./ncl_post.sh $MCexp$experiment
+        python3 plot_output.py # plot the McSnow output in Spectra form 
         
- 
     fi
-                 
+    
 
 
     done #for ssat
