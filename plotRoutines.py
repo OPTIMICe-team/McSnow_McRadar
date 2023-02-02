@@ -63,183 +63,9 @@ def wavgNmono(group):
     return (d * w).sum() / w.sum()
 
 
-def plotArSpec(dicSettings,mcTable,velBins,inputPath):
-# plots the aspect ratios depending on the velocity (so sort of like a Doppler Spectrum)
-    for i, heightEdge0 in enumerate(dicSettings['heightRange']):
-        heightEdge1 = heightEdge0 + dicSettings['heightRes']
-        height = heightEdge0+dicSettings['heightRes']/2
-        mcTableTmp = mcTable[(mcTable['sHeight']>heightEdge0) &
-                             (mcTable['sHeight']<=heightEdge1)].copy()
-        
-        # cut into velocity bins
-        binVel,sVel = pd.cut(mcTableTmp['vel'],bins=velBins,retbins=True)
-        #group according to velocity bins
-        grouped = mcTableTmp.groupby(binVel)
-        # apply sMult as weight
-        weighted = grouped.apply(wavg)
-        if i == 0:
-            binnedXR = xr.DataArray(weighted.values.reshape(len(weighted),1),
-                                    dims=('vel','height'),
-                                    coords={'height':height.reshape(1),'vel':velBins[0:-1]})
-        else:
-            tmpXR = xr.DataArray(weighted.values.reshape(len(weighted),1),
-                                    dims=('vel','height'),
-                                    coords={'height':height.reshape(1),'vel':velBins[0:-1]})
-            binnedXR = xr.concat([binnedXR,tmpXR],dim='height')
-    top = cm.get_cmap('autumn', 200)
-    bottom = cm.get_cmap('winter', 100)
 
-    newcolors = np.vstack((bottom(np.linspace(0, 1, 100)),
-                       top(np.linspace(0, 1, 200))))
-    newcmp = ListedColormap(newcolors, name='OrangeBlue')
-    binnedXR.plot(x='vel',y='height',vmin=0,vmax=3,cmap=newcmp,cbar_kwargs={'label':'ar'})
-    plt.grid(True,ls='-.')
-    plt.xlabel('vel [m/s]')
-    plt.tight_layout()
-    plt.savefig(inputPath+'1d_habit_spec_ar_weighted.png')
-    plt.close()
-def plotPropSpec(dicSettings,mcTable,velBins,inputPath,prop,savefig=True):
-# plots the aspect ratios depending on the velocity (so sort of like a Doppler Spectrum)
-    for i, heightEdge0 in enumerate(dicSettings['heightRange']):
-        heightEdge1 = heightEdge0 + dicSettings['heightRes']
-        height = heightEdge0+dicSettings['heightRes']/2
-        mcTableTmp = mcTable[(mcTable['sHeight']>heightEdge0) &
-                             (mcTable['sHeight']<=heightEdge1)].copy()
-        
-        # cut into velocity bins
-        #mcTableTmp = mcTableTmp[(mcTableTmp['sNmono'] > 1.0)]
-        #print(mcTableTmp['dia_cm'].max())
-        #quit()
-        #mcTableTmp = mcTableTmp[(mcTableTmp['sPhi']>=0.01)]
-        binVel,sVel = pd.cut(mcTableTmp['vel'],bins=velBins,retbins=True)
-        
-        #group according to velocity bins
-        grouped = mcTableTmp.groupby(binVel)
-        
-        # apply sMult as weight
-        if prop == 'dia_cm':
-            weighted = np.log10(grouped.apply(wavgD))
-            vmin = -2;vmax = 1
-            cmap = getNewNipySpectral()
-            cbar_label = 'log(dia) [cm]'
-        elif prop == 'sPhi':
-            weighted = grouped.apply(wavg)
-            #print(height)
-            #print(weighted.min())
-            vmin = 0.;vmax = 3.
-            #pink = np.array([248/300, 24/300, 148/300, 1])
-            #top = cm.get_cmap('autumn', 200)
-            #bottom = cm.get_cmap('winter', 99)
-            #bottom = bottom(np.linspace(0, 1, 100))
-            #bottom[99] = pink           
-            #top = top(np.linspace(0, 1, 200))
-            #top[0] = pink
-            #newcolors = np.vstack((bottom,
-            #                       top))
-            #cmap = ListedColormap(newcolors, name='OrangeBlue')
-            
-            #cmap = colors.ListedColormap(['sandybrown','lightsalmon','lightcoral','salmon','darksalmon','coral','darkorange','orangered','darkred','red',
-            #                              'magenta',
-            #                              'green','lime','aquamarine','turquoise','lightseagreen','mediumturquoise','teal','darkcyan','darkturquoise',
-            #                              'cadetblue','deepskyblue','steelblue','dodgerblue','cornflowerblue','royalblue','blue','mediumblue','darkblue','navy','midnightblue'])
-            
-            #boundaries = np.linspace(0,3,31)
-            #norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
-            bottom = cm.get_cmap('binary',21)
-            top = cm.get_cmap('copper',41)
-            bottom =  bottom(np.linspace(0.2, 1, 21))
-            top = top(np.linspace(0.3, 1, 41))
-            bottom[16] = colors.to_rgba('cyan')
-            bottom[17] = colors.to_rgba('mediumspringgreen')
-            bottom[18] = colors.to_rgba('lime')
-            bottom[19] = colors.to_rgba('green')
-            bottom[20] = colors.to_rgba('magenta')
-
-            top[0] = colors.to_rgba('red')
-            top[1] = colors.to_rgba('darkred')
-            top[2] = colors.to_rgba('darkorange')
-            top[3] = colors.to_rgba('gold')
-      
-            newcolors = np.vstack((bottom,
-                                   top))
-            cmap = ListedColormap(newcolors)
-            cbar_label = 'aspect ratio'
-        elif prop == 'mTot_g':
-            weighted = np.log10(grouped.apply(wavgM))
-            vmin = -5;vmax = 1.5
-            cmap = getNewNipySpectral()
-            cbar_label = 'log(mTot) [g]'
-        elif prop == 'sNmono':
-            weighted = grouped.apply(wavgNmono)
-            vmin = 1;vmax = 50
-            viridis = cm.get_cmap('viridis', vmax)
-            newcolors = viridis(np.linspace(0, 1, vmax))
-            red = ([1,0/vmax,0/vmax,1])
-            pink = np.array([248/vmax, 24/vmax, 148/vmax, 1])
-            newcolors[:1, :] = red
-            cmap = ListedColormap(newcolors)
-            cbar_label = 'Number of monomers'
-            
-            
-        elif prop == 'sNmono_min':
-            weighted = grouped['sNmono'].min()
-            vmin = 1;vmax = 50
-            viridis = cm.get_cmap('viridis', vmax)
-            newcolors = viridis(np.linspace(0, 1, vmax))
-            red = ([1,0/vmax,0/vmax,1])
-            pink = np.array([248/vmax, 24/vmax, 148/vmax, 1])
-            newcolors[:1, :] = red
-            cmap = ListedColormap(newcolors)
-            cbar_label = 'minimum number of monomers'
-        elif prop == 'sNmono_max':
-            weighted = grouped['sNmono'].max()
-            vmin = 1;vmax = 50
-            viridis = cm.get_cmap('viridis', vmax)
-            newcolors = viridis(np.linspace(0, 1, vmax))
-            red = ([1,0/vmax,0/vmax,1])
-            pink = np.array([248/vmax, 24/vmax, 148/vmax, 1])
-            newcolors[:1, :] = red
-            cmap = ListedColormap(newcolors)
-            cbar_label = 'maximum number of monomers'
-        elif prop == 'number_conc':
-            volume = dicSettings['heightRes']*dicSettings['gridBaseArea']
-            
-            weighted =np.log10(grouped['sMult'].sum()/volume) #grouped['sMult'].count()# grouped['sMult'].sum() #np.log10(grouped['sMult'].sum())
-            
-            # we need concentration per m3, not per volume which is spanned by gridbase area and height res. So we need to divide by gridbaseArea*heightRes
-            
-            vmin = 0;vmax = 6
-            cmap = getNewNipySpectral()
-            cbar_label = r'Number concentration [log] [#m$^{-3}$]'
-        else:
-            print(prop+' not yet defined')
-        if i == 0:
-            binnedXR = xr.DataArray(weighted.values.reshape(len(weighted),1),
-                                    dims=('vel','height'),
-                                    coords={'height':height.reshape(1),'vel':velBins[0:-1]})
-        else:
-            tmpXR = xr.DataArray(weighted.values.reshape(len(weighted),1),
-                                    dims=('vel','height'),
-                                    coords={'height':height.reshape(1),'vel':velBins[0:-1]})
-            #tmpXR.plot(x='vel') 
-            #plt.grid()
-            #plt.savefig(inputPath+'{height}_super_particle_number_concentration_cell_size.png'.format(height=tmpXR.height.values[0]))
-            #plt.close()
-            #plt.show()
-            binnedXR = xr.concat([binnedXR,tmpXR],dim='height')
-    binnedXR.plot(x='vel',y='height',vmin=vmin, vmax=vmax,cmap=cmap,cbar_kwargs={'label':cbar_label})
-    plt.xlabel('vel [m/s]')
-    plt.gca.tick_params(which='both',labelsize=16)
-    if savefig==True:
-        plt.grid(True,ls='-.')
-        plt.ylim([0,dicSettings['maxHeight']])
-        plt.tight_layout()
-        plt.savefig(inputPath+'1d_habit_spec_'+prop+'_weighted_alltimes.png')
-        plt.close()
-    else:
-        return ax
 def plotPropSpecThesis(ax,heightRange,heightRes,mcTable,velBins,prop,savefig=False,cbar=True,gridBaseArea=5.0,diff=False,mcTable1=None):
-# plots the aspect ratios depending on the velocity (so sort of like a Doppler Spectrum)
+# plots the properties depending on the fall velocity (so sort of like a Doppler Spectrum), so the data gets binned into velocity bins and weighted by the multiplicity and then plotted with height/temp on y-axis and velocity on x-axis
     
     for i, heightEdge0 in enumerate(heightRange[0:-1]):
         
@@ -540,59 +366,7 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
             
         plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
         plt.close()
-def plotMomentsAlltime(dicSettings,output,inputPath,convoluted=False):
-    for wl in dicSettings['wl']:
-        wlStr = '{:.2e}'.format(wl)
-        freq = (constants.c / float(wlStr))  *1e3 / 1e9
-        freq = '{:.1f}'.format(freq)
-     
-        if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
-          if convoluted == True:
-              saveName = '1d_habit_moments_{0}_convoluted.png'.format(freq)
-              fig,axes = plt.subplots(ncols=2,figsize=(10,5),sharey=True)
-              # plot ZDR
-              output['MDV_H_{0}'.format(freq)].plot(ax=axes[0],y='range', lw=2)
-              axes[0].set_title('rad: {0} elv: {1}, MDV'.format(freq, dicSettings['elv']))
-              #axes[0].set_ylim(0, 5000)
-              axes[0].grid(True,ls='-.')
-              axes[0].set_xlabel('MDV [m/s]')
-              axes[0].set_ylim([0,dicSettings['maxHeight']])
-        #plt.savefig(inputPath+'1d_habit_ZDR_{0}.png'.format(wlStr), format='png', dpi=200, bbox_inches='tight')
-        #plt.close()
 
-              axes[1].plot(mcr.lin2db(output['Ze_H_{0}'.format(freq)]),output['range'],linewidth=2) # TODO: change back to ZeH
-              axes[1].set_xlabel('Z_H [dB]')
-              axes[1].set_title('Ze_H')
-              #plt.ylim(0, 5000)
-              #plt.xlim(-3, 0)
-              axes[1].grid(True,ls='-.')
-              axes[1].set_ylim([0,dicSettings['maxHeight']])
-              plt.tight_layout()
-              plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
-              plt.close()
-          else: 
-              saveName = '1d_habit_moments_{wl}_{mode}_alltimes.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'])
-           
-              fig,axes = plt.subplots(nrows=2,figsize=(10,5),sharex=True)
-              output['MDV_H_{0}'.format(wlStr)].plot(ax=axes[0],y='range',cmap='jet',vmin=-3,vmax=1)
-              axes[0].set_title('rad: {0} elv: {1}, MDV'.format(freq, dicSettings['elv']))
-              #axes[0].set_ylim(0, 5000)
-              axes[0].grid(True,ls='-.')
-              #axes[0].set_xlabel('time')
-              axes[0].set_ylim([0,dicSettings['maxHeight']])
-        
-              #axes[1].plot(mcr.lin2db(output['Ze_H_{0}'.format(wlStr)]),output['range'],linewidth=2) # TODO: change back to ZeH
-              (mcr.lin2db(output['Ze_H_{0}'.format(wlStr)])).plot(ax=axes[1],y='range',cmap='jet',vmin=-30,vmax=20)
-              axes[1].set_xlabel('time')
-              axes[1].set_title('Ze_H')
-              #plt.ylim(0, 5000)
-              #plt.xlim(-3, 0)
-              axes[1].grid(True,ls='-.')
-              axes[1].set_ylim([0,dicSettings['maxHeight']])
-              plt.tight_layout()
-            
-        plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
-        plt.close()
 def plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,plotTemp=False):
     #for wl in dicSettings['wl']:
     #wlStr1 = '{:.2e}'.format(dicSettings['wl'][0])
@@ -734,24 +508,7 @@ def plotSpectra(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
         freq = '{:.1f}'.format(freq)
         
         if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
-            '''
-        	if plotTemp==True:
-                saveName = '1d_habit_spectra_{wl}_convoluted_{mode}_{part}_Temp_alpha_eff1.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],
-                																			part=dicSettings['scatSet']['particle_name'])
-                specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
-                specH = specH.where(specH > -39)
-                vary='Temp';varUni = '[°C]'
-                ylim = [0,-30]
-        	else:
-                saveName = '1d_habit_spectra_{wl}_convoluted_{mode}_{part}_{elv}_alpha_eff1.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],
-                																		part=dicSettings['scatSet']['particle_name'],
-                																		elv=['elv'])
-                specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
-                specH = specH.where(specH > -39)
-                vary='range'; varUnit = '[m]'
-                ylim = [0,dicSettings['maxHeight']]
-            '''
-            #else: 
+            
             if plotTemp == True:
                 saveName = '1d_habit_spectra_{wl}_{mode}_{part}_{elv}_Temp.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],
                 																			part=dicSettings['scatSet']['particle_name'],elv=dicSettings['elv'])
@@ -860,61 +617,6 @@ def plotSpectra(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
             plt.tight_layout()
         
         plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
-        plt.close()
-
-def plotProposal(dicSettings,output,inputPath):
-    for wl in dicSettings['wl']:
-        
-        wlStr = '{:.2e}'.format(wl)
-        specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
-        specV = mcr.lin2db(output['spec_V_{0}'.format(wlStr)])
-        specH = specH.where(specH > -40)
-        specV =  specV.where(specV > -40)
-        #dataSmooth = specTable.rolling(vel=10,min_periods=1,center=True).mean()            
-        sZDR = specH.rolling(vel=10,min_periods=1,center=True).mean() - specV.rolling(vel=10,min_periods=1,center=True).mean()
-        fig,axes = plt.subplots(ncols=4,figsize=(15,5),sharey=True)
-        axes[0].plot(output['conc_agg']/250,output['temperature [°C]'], lw=2,label='Aggregate')
-        axes[0].plot(output['conc_mono']/250,output['temperature [°C]'], lw=2,label='Crystal')
-        axes[0].grid(True,ls='-.')
-        axes[0].set_ylim([-2.5,-20])
-        #axes[0].set_xticks([-5,-10,-15,-20])
-        axes[0].set_xlabel(r'conc [m$^{-3}$]',fontsize=18)
-        axes[0].set_ylabel(r'Temp [°C]',fontsize=18)
-        axes[0].tick_params(labelsize=16)
-        axes[0].legend(fontsize=16)
-        axes[0].text(1,-18.6,'a)',fontsize=22)
-        plt.tight_layout()        
-        axes[1].plot(output['kdpInt_{0}'.format(wlStr)],output['temperature [°C]'], lw=2)
-        axes[1].grid(True,ls='-.')
-        #axes[1].set_ylim([-20,0])
-        axes[1].set_xlabel(r'KDP [°km$^{-1}$]',fontsize=18)
-        axes[1].set_ylabel('')
-        axes[1].tick_params(labelsize=16)
-        axes[1].text(0.002,-18.6,'b)',fontsize=22)
-        plt.tight_layout()
-        axes[2].plot(mcr.lin2db(output['Ze_H_{0}'.format(wlStr)])-mcr.lin2db(output['Ze_V_{0}'.format(wlStr)]),output['temperature [°C]'], lw=2)
-        axes[2].set_xlabel('ZDR [dB]',fontsize=18)
-        #axes[2].set_ylim([-20,0])
-        axes[2].grid(True,ls='-.')
-        axes[2].set_ylabel('')
-        axes[2].tick_params(labelsize=16)
-        axes[2].text(0.48,-18.6,'c)',fontsize=22)
-        plt.tight_layout()
-        #sZDR.plot(ax=axes[3],x='vel',vmin=-0.5, vmax=3,cmap=getNewNipySpectral(),cbar_kwargs={'label':'sZDR [dB]'}) # TODO: change back to ZeH-ZeV or to ZeV if you use first LUT of dendrites
-        p=axes[3].pcolormesh(output['vel']*np.sin(30/180.*np.pi),output['temperature [°C]'],sZDR,vmin=-0.5, vmax=3,cmap=getNewNipySpectral())
-        cb=fig.colorbar(p,ax=axes[3])
-        cb.set_label('sZDR [dB]',fontsize=16)#,fontsize=22)
-        cb.ax.tick_params(labelsize=16)
-        axes[3].set_xlim(-1, 0)
-        #axes[3].set_ylim([-20,0])
-        axes[3].set_ylabel('')
-        axes[3].set_xlabel(r'Doppler velocity [ms$^{-1}$]',fontsize=18)
-        axes[3].grid(True,ls='-.')
-        axes[3].tick_params(labelsize=16)
-        axes[3].text(-0.96,-18.6,'d)',fontsize=22)
-        plt.tight_layout()
-        
-        plt.savefig(inputPath+'KDP_ZDR_sZDR_proposal_sin30.png', format='png', dpi=200, bbox_inches='tight')
         plt.close()
 
 def plotAtmo(atmoFile,inputPath):
@@ -1133,32 +835,7 @@ def plotProfilesObsDWR(dataLV2,outPath,ylim=False):
         plt.close()
         print(ti,' finished')    
         
-'''        
-def plotPSD(dicSettings,mcTable,dBins,inputPath):
-# plots the PSD binned in D bins, dBins in cm
-    for i, heightEdge0 in enumerate(dicSettings['heightRange'][::-1]):
-        heightEdge1 = heightEdge0 + dicSettings['heightRes']
-        height = heightEdge0+dicSettings['heightRes']/2
-        mcTableTmp = mcTable[(mcTable['sHeight']>heightEdge0) &
-                             (mcTable['sHeight']<=heightEdge1)].copy()
-        
-        
-        mcTableTmpMono = mcTableTmp[mcTableTmp['sNmono'] == 1].copy()
-        mcTableTmpAgg = mcTableTmp[mcTableTmp['sNmono'] > 1].copy()
-        plt.xscale('log')
-        #plt.yscale('log')
-        plt.hist(mcTableTmpMono.dia_cm,bins=dBins,label='Crystal')
-        plt.hist(mcTableTmpAgg.dia_cm,bins=dBins,label='Agg')
-        plt.ylabel('#(SP)')
-        plt.xlabel(r'D [cm]')
-        plt.title('Height: ' + str(height))
-        plt.grid(which='both')
-        plt.legend()
-        outfileName = 'histD_height_' + str(height)
-        plt.savefig(inputPath + '/' + outfileName + '.png')
-        plt.show()
-        quit()
-'''        
+
 def plot_agg_kernel_xr(ax,data,kernel,height,cmap='viridis',noN=False):
     
     #if noN==True:
@@ -1204,94 +881,7 @@ def plot_agg_kernel_xr(ax,data,kernel,height,cmap='viridis',noN=False):
     
     return ax        
  
-def plot_var_particle_ID(mcTable,inputPath,prop,var2col,atmoFile,zoom=False):
-  # this plots the particles according to their ID and height. This is to test the evolution of different parameters with respect to height. Input: mcTable, path to save the plot and the variable to plot (prop)
-  # zoom needs to  be array of ylim
-  # first lets make temp like height
-  height = atmoFile[:,0]
-  Temp = atmoFile[:,2] -273.15
-  
-  idx21 = (np.abs(Temp - (-21))).argmin()
-  idx20 = (np.abs(Temp - (-20))).argmin()
-  idx19 = (np.abs(Temp - (-19))).argmin()
-  idx18 = (np.abs(Temp - (-18))).argmin()
-  idx17 = (np.abs(Temp - (-17))).argmin()
-  idx165 = (np.abs(Temp - (-16.5))).argmin()
-  idx16 = (np.abs(Temp - (-16))).argmin()
-  idx155 = (np.abs(Temp - (-15.5))).argmin()
-  idx15 = (np.abs(Temp - (-15))).argmin()
-  idx145 = (np.abs(Temp - (-14.5))).argmin()
-  idx14 = (np.abs(Temp - (-14))).argmin()
-  idx135 = (np.abs(Temp - (-13.5))).argmin()
-  idx13 = (np.abs(Temp - (-13))).argmin()
-  idx125 = (np.abs(Temp - (-12.5))).argmin()
-  idx12 = (np.abs(Temp - (-12))).argmin()
-  
-  n = max(mcTable[var2col])
-  mcTable = mcTable.set_index(var2col,drop=False)
-  
-  norm = mpl.colors.Normalize(vmin=0, vmax=n)
-  c_m = mpl.cm.gist_rainbow
-  # create a ScalarMappable and initialize a data structure
-  s_m = mpl.cm.ScalarMappable(cmap=c_m, norm=norm)
-  s_m.set_array([])
-  step = n
-  step = step-1
-  tickmarks = np.arange(0,n)
-  fig, ax1 = plt.subplots(figsize=(9,5))
 
-  #ax2 = ax1.twinx()
-  for sID in mcTable[var2col]:
-    mcTableTmp = mcTable.loc[sID]
-    if 'dia' in prop:
-      ax1.semilogy(mcTableTmp['sHeight'],mcTableTmp[prop],color = s_m.to_rgba(sID-1))
-      
-    else:
-      ax1.plot(mcTableTmp['sHeight'],mcTableTmp[prop],color = s_m.to_rgba(sID-1))
-  '''
-  ax1.axvline(x=height[idx21],c='k',linestyle='-',label='-21°C')    
-  ax1.axvline(x=height[idx20],c='k',linestyle='-',label='-20°C')    
-  ax1.axvline(x=height[idx19],c='k',linestyle='-',label='-19°C')
-  ax1.axvline(x=height[idx18],c='k',linestyle='-',label='-18°C')
-  ax1.axvline(x=height[idx17],c='k',linestyle='-',label='-17°C')    
-  ax1.axvline(x=height[idx165],c='k',linestyle='--')#,label='-16.5°C')
-  ax1.axvline(x=height[idx16],c='k',linestyle='-',label='-16°C')
-  ax1.axvline(x=height[idx155],c='k',linestyle='--')#,label='-15.5°C')    
-  ax1.axvline(x=height[idx15],c='k',linestyle='-',label='-15°C')
-  ax1.axvline(x=height[idx145],c='k',linestyle='--')#,label='-14.5°C')
-  ax1.axvline(x=height[idx14],c='k',linestyle='-',label='-14°C')    
-  ax1.axvline(x=height[idx135],c='k',linestyle='--')#,label='-13.5°C')
-  ax1.axvline(x=height[idx13],c='k',linestyle='-',label='-13°C')
-  ax1.axvline(x=height[idx125],c='k',linestyle='--')#,label='-12.5°C')
-  ax1.axvline(x=height[idx12],c='k',linestyle='-',label='-12°C')
-  '''
-  #mcTable.plot.scatter(x='sHeight',y=prop,c='dia_cm',cmap='gist_rainbow') 
-  #print(mcTableTmp)
-  #cax = fig.add_axes([0.95, 0.1, 0.02, 0.75])
-  if var2col == 'time':
-    var2col='time [min]'
-  if var2col == 'sMult':
-    var2col = 'particle_ID'
-  cbar = plt.colorbar(s_m, pad=0.15)
-  cbar.ax.tick_params(labelsize=12)
-  cbar.set_label(var2col,fontsize=13)
-  #ax2.plot(height,Temp,linestyle='--',c='b')
-  ax1.set_xlabel('sHeight [m]',fontsize=13)
-  #ax2.set_ylim([0,-20])
-  ax1.set_ylabel(prop,fontsize=13)
-  #ax2.set_ylabel('Temp [°C]',color='b',fontsize=13)
-  #ax2.set_xlim([4000,0])
-  ax1.set_xlim([4000,0])
-  if zoom:
-    plt.ylim([zoom[0],zoom[1]])
-    prop=prop+'_zoom'
-  ax1.grid()
-  #ax2.grid(ls='-.')
-  #ax1.legend()
-  plt.tight_layout()
-  plt.savefig(inputPath+prop+'_'+var2col+'_height.png')
-  plt.close()
-  
 
 def plot_var_particle_ID_temp(mcTable,prop,var2col,varName,unit,zoom=False,onlySpecPart=False,log=False,Dini=False,ax=None,cbar=True,xlabel=True,save=False,inputPath=None):
   # this plots the particles according to their ID and height. This is to test the evolution of different parameters with respect to height. Input: mcTable, path to save the plot and the variable to plot (prop)
@@ -1384,7 +974,7 @@ def plotInitempVar(mcTable,ax,inputPath,prop,var2col,unit,varName,zoom=False,ylo
   #print(RHi)
   #quit()
   mcTableSmult = mcTable.set_index('sMult',drop=False)
-  iniDia = np.array([10.,20.,30.,40.,50.,60.,70.,80.,90.,100.,120.,140.,160.,180.,200.,300.,400.,500.,600.,700.,800.,900.,1000.])*1e-6 # TODO need to check if these Dini are correct if calculated with McSnow!!
+  iniDia = np.array([10.,20.,30.,40.,50.,60.,70.,80.,90.,100.,120.,140.,160.,180.,200.,300.,400.,500.,600.,700.,800.,900.,1000.])*1e-6 
   
   for i,sID in enumerate(np.sort(mcTableSmult['sMult'].unique())):
     
@@ -1445,84 +1035,7 @@ def plotInitempVar(mcTable,ax,inputPath,prop,var2col,unit,varName,zoom=False,ylo
   
   
   return ax
-def plotIniTempMaxArTempAr(mcTable,inputPath,prop,zoom=False,ylog=False,xlog=False,zlog=False):
-  # plot 3D plot with Initemp on y-axis, T ar max ar on x-axis and ar on z axis. Color by maximum ar or PID
-  mcTableSmult = mcTable.set_index('sMult',drop=False)
-  
-  fig,ax = plt.subplots(figsize=(9,5))
-  TpropMaxvec = np.empty(len(mcTableSmult.sMult.unique()))
-  Tini =  np.empty(len(mcTableSmult.sMult.unique()))
-  #var =  np.empty(mcTableSmult.sMult.max())#len(mcTableSmult),len(mcTableSmult))
-  maxPropVec =  np.empty(len(mcTableSmult.sMult.unique()))
-  #print(maxPropVec.shape)
-  #print(var.shape)
-  #particleID =  
-  if prop == 'sPhi':
-    bottom = cm.get_cmap('gist_rainbow',40)
-    top = cm.get_cmap('ocean',20)
-    bottom =  bottom(np.linspace(0, 1, 40))
-    top = top(np.linspace(0, 1, 20))
-    newcolors = np.vstack((bottom,top))
-    cmap = ListedColormap(newcolors)
-  else: 
-    cmap = 'gist_rainbow' 
-  for i,sID in enumerate(mcTableSmult['sMult'].unique()):#i,sID in enumerate(mcTableSmult['sMult']):
-    
-    mcTableTmp = mcTableSmult.loc[sID]
-    
-    try:
-      mcTableTmp = mcTableTmp.set_index('time')
-      # get initialization Temperature
-      iniTemp = mcTableTmp.Temp.min()
-      iniDF = mcTableTmp.loc[mcTableTmp.Temp.idxmin()]
-      # get minimum of ar (in case of plate because plate has ar<1)
-      if prop=='sPhi':
-        maxProp = mcTableTmp[prop].min()
-        if maxProp < 1:
-        # in case of plates:
-          maxPropDF = mcTableTmp.loc[mcTableTmp[prop].idxmin()]
-        else:
-          maxProp = mcTableTmp[prop].max()
-          maxPropDF = mcTableTmp.loc[mcTableTmp[prop].idxmax()]
-      else:
-        # in case of columns and other variables:
-        maxProp = mcTableTmp[prop].max()
-        maxPropDF = mcTableTmp.loc[mcTableTmp[prop].idxmax()]
-      #if i == 0:
-      #  TpropMaxvec = maxPropDF.Temp
-      #  Tini = iniTemp
-      #  var = mcTableTmp[prop]
-      #  TpropMaxvec = maxPropDF.Temp
-      #else:
-      TpropMaxvec[i] = maxPropDF.Temp
-      Tini[i] = iniTemp
-      #var = var.append(mcTableTmp[prop])
-      maxPropVec[i] = maxProp
-    except:
-      TpropMaxvec[i] = np.nan
-      Tini[i] = np.nan
-      #var = var.append(mcTableTmp[prop])
-      maxPropVec[i] = np.nan
-  #quit()
-  
-  sc = ax.scatter(TpropMaxvec,Tini,c=maxPropVec,cmap=cmap,norm=mpl.colors.LogNorm(vmin=10**-2, vmax=10**1))
-  cb = plt.colorbar(sc, ax=ax)
-  cb.ax.tick_params(labelsize=12)
-  cb.set_label('max '+prop,fontsize=13)
-  if ylog==True:
-    ax.set_yscale('log')
-  if xlog==True:
-    ax.set_xscale('log')
-  if zlog == True:
-    ax.set_zscale('log')
-  ax.set_ylabel('Initialization Temperature',fontsize=13)
-  ax.set_xlabel('Temperature at maximum '+prop,fontsize=13)
-  ax.grid()
-  #ax.set_zlabel(prop)
-  plt.tight_layout()
-  figName = '_iniT_'+prop+'Max.png'
-  plt.savefig(inputPath+prop+figName)
-  plt.show()
+
   
 def plotHeightProf(nz,mcTable,inputPath,dicSettings):
   '''
@@ -1576,32 +1089,6 @@ def plotPSD(mcTable,dicSettings,inputPath,bins,var,gam=None,fac=1,xlim=None,tick
     plt.close()
     
     print(height,' done')
-def calc_gamma_distr(nu_gam,mu_gam,IWC,nrp0,Mbins):
-    #calculate gamma distribution how it is written in McSnow
-    lam, gam_n1, gam_n2, mean_mass = calc_lam(nu_gam, mu_gam, IWC, nrp0)
-  # calculate A
-    A = calc_A(nu_gam, mu_gam, lam, nrp0, gam_n1)
- #calculate gamma distribution:
-    return calc_gam(nu_gam, mu_gam, A, lam, Mbins)
-    
-def calc_lam(nu_gam, mu_gam, IWC, nrp0):
-  # calculate lambda of gamma distribution: lambda = (gam_n1/(gam_n2*mean_mass))
-  mean_mass = IWC/nrp0
-  print((nu_gam+1)/mu_gam)
-  print((nu_gam+2)/mu_gam)
-  print(nu_gam,mu_gam)
-  gam_n1 = math.gamma((nu_gam+1)/mu_gam)
-  gam_n2 = math.gamma((nu_gam+2)/mu_gam)
-  lam = (gam_n1/(gam_n2*mean_mass))**(-mu_gam)
-  return lam, gam_n1, gam_n2, mean_mass
-  
-def calc_A(nu_gam, mu_gam, lam, nrp0, gam_n1):
-  # calculate A of gamma distribution
-  return (mu_gam*nrp0/gam_n1)*lam**((nu_gam+1)/mu_gam)
-  
-def calc_gam(nu_gam, mu_gam, A, lam, x):
-    return A*x**nu_gam*np.exp(-lam*x**mu_gam)
-    
     
 def plot_scat_particle_ID_temp(mcTable,inputPath,prop,var2col,varName,unit,zoom=False,onlySpecPart=False,log=False,xlog=False,ax=None,cbar=True,y_label=True,separate=None):
   # this plots the particles according to their ID and height. This is to test the evolution of different parameters with respect to height. Input: mcTable, path to save the plot and the variable to plot (prop)
