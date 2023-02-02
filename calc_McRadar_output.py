@@ -17,45 +17,130 @@ import matplotlib as mpl
 import pandas as pd
 import xarray as xr
 import os
+def str2bool(v):
+  return v.lower() in ("yes", "True", "t", "1","true")
 
-#freq = np.array([95e9])
-freq = np.array([35.5e9])
-#experimentID = '1d___binary_xi1000_nz200_lwc0_iwc7_ncl10_nclmass10_ssat30_dtc5_nrp5_rm10_rt0_vt3_at0_stick2_dt1_h0-0_ba500'
+#- get all variables necessary to calculate scattering from environment
+allTimes=False
+single_particle=str2bool(os.environ['singleParticle'])
+convolute=str2bool(os.environ['convolute'])
+freqEnv = os.environ['freq'].split('_')
+elv = float(os.environ['elv'])
+particle_name = os.environ['particle']
+outName = os.environ['McRadarfileName']
+freq = np.array([float(f)*1e9 for f in freqEnv])
 experimentID = os.environ['experiment']
-print(experimentID)
-#inputPath = '/work/lvonterz/McSnow_habit/experiments/'+experimentID+'/'
-inputPath = os.environ['MCexp']+'experiments/'+experimentID+'/'
+inputPath = os.environ['MCexp']+'/'+experimentID+'/'
+scatMode = os.environ['scatMode']
+lutPath = '/project/meteo/work/L.Terzi/McRadar/LUT/' #'/work/lvonterz/SSRGA/snowScatt/ssrga_LUT/' #'/data/optimice/McRadarLUTs/'
+domTop = inputPath.split('domtop')[1].split('_')[0].split('.')[0]
+
+
+try:
+  minmax = os.environ['minmax'] 
+  vmin=int(minmax.split('_')[0]); vmax=int(minmax.split('_')[1]) 
+  print(minmax)
+except: 
+  minmax=False
+  print('no minmax')
 print('loading the settings')
 
+
 #-- load the settings of McSnow domain, as well as elevation you want to plot: 
+if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
+	heightRes = 36
+else:
+	heightRes = 2
 #In order to avoid volume sampling problems, you have to insert the gridBaseArea as it was defined in the McSnow simulation
 dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
                                #'../data/1d_habit_test_leonie.dat',#'../data/habit_1d_leonie.dat',#'../data/1d_habit_test_leonie.dat',#'../tests/data_test.dat',
-                               elv=30, freq=freq,gridBaseArea=5.0,maxHeight=2400,ndgsVal=50,heightRes=50,scatSet={'mode':'full', 'safeTmatrix':False})
+                               elv=elv, freq=freq,gridBaseArea=5.0,maxHeight=int(domTop),
+                               ndgsVal=50,heightRes=heightRes,convolute=convolute,scatSet={'mode':scatMode,'lutPath':lutPath,'particle_name':particle_name,'safeTmatrix':True})
 
 print('loading the McSnow output')
-# now generate a table from the McSnow output. You can specify xi0, if it is not stored in the table (like in my cases)
+# now generate a table from the McSnow output.
 mcTable = mcr.getMcSnowTable(dicSettings['dataPath'])
-print('selecting time step = 600 min  ')
-#-- now select time step to use (600s is usually used)
-selTime = 600.
-times = mcTable['time']
-mcTable = mcTable[times==selTime]
-mcTable = mcTable.sort_values('sHeight')
-#print(mcTable.sPhi)
-print('getting things done :) -> calculating radar variables')
-#-- now the full polarimetric output is generated (KDP, aswell as spec_H and spec_V, from which you can calculate ZeH, ZeV, ZDR, sZDR)
-#mcr.fullRadar(dicSettings,mcTable)
-#quit()
-output = mcr.fullRadar(dicSettings, mcTable)
-print(output)
-for wl in dicSettings['wl']:
-    wlStr = '{:.2e}'.format(wl)
-    output['Ze_H_{0}'.format(wlStr)] = output['spec_H_{0}'.format(wlStr)].sum(dim='vel')
-    output['Ze_V_{0}'.format(wlStr)] = output['spec_V_{0}'.format(wlStr)].sum(dim='vel')
-print(output)
+# for trajectories:
+if minmax:
+  mcTable = mcTable[(mcTable['sMult']>vmin) & (mcTable['sMult']<=vmax)] 
 
-print('saving the output file')
+#quit()
+
+times = mcTable['time']
+if allTimes==True:
+	for i,selTime in enumerate(times.unique()):
+		mcTableTmp = mcTable[times==selTime]
+		mcTableTmp = mcTableTmp.sort_values('sHeight')
+		print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
+		outputTime = mcr.fullRadar(dicSettings, mcTableTmp)
+		print(output)
+		for wl in dicSettings['wl']:
+			wlStr = '{:.2e}'.format(wl)
+			if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
+				outputTime['Ze_H_{0}'.format(wlStr)] = outputTime['spec_H_{0}'.format(wlStr)].sum(dim='vel')
+				outputTime['MDV_H_{0}'.format(wlStr)] = (outputTime['spec_H_{0}'.format(wlStr)]*outputTime['vel']).sum(dim='vel')/outputTime['Ze_H_{0}'.format(wlStr)]
+				      
+			else:
+				outputTime['Ze_H_{0}'.format(wlStr)] = outputTime['spec_H_{0}'.format(wlStr)].sum(dim='vel')
+				outputTime['Ze_V_{0}'.format(wlStr)] = outputTime['spec_V_{0}'.format(wlStr)].sum(dim='vel')
+				outputTime['MDV_H_{0}'.format(wlStr)] = (outputTime['spec_H_{0}'.format(wlStr)]*outputTime['vel']).sum(dim='vel')/outputTime['Ze_H_{0}'.format(wlStr)]
+				outputTime['MDV_V_{0}'.format(wlStr)] = (outputTime['spec_V_{0}'.format(wlStr)]*outputTime['vel']).sum(dim='vel')/outputTime['Ze_V_{0}'.format(wlStr)]
+			print(output)
+			print(selTime)
+		outputTime = outputTime.expand_dims(dim={'time':1})
+		outputTime = outputTime.assign_coords(time=np.asarray(selTime).reshape(1))
+		if i == 0:
+			output = outputTime
+		else:
+			output = xr.merge([outputTime,output])  
+	outName = os.environ['freq']+'GHz_output_{mode}_alltimes.nc'.format(mode=dicSettings['scatSet']['mode'])
+	print(outputTime)
+else:
+	if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
+		selTime = mcTable['time'].max()
+		if selTime != 600:
+			print('the McSnow simulation did not contain 600 timesteps, check your time setup!!')
+			quit()
+		mcTableTmp = mcTable[times==selTime]	
+	else: # if we have trajectories it makes sense to have single_particles = True!!!
+		if single_particle == False:
+			mcTable['sMult'] = 1.0 
+		mcTableTmp = mcTable
+	print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
+	print(single_particle)
+	#-- now the full polarimetric output is generated (KDP, aswell as spec_H and spec_V, from which you can calculate ZeH, ZeV, ZDR, sZDR)
+	#mcr.fullRadar(dicSettings,mcTable)
+	#quit()
+	if single_particle == False:
+		#print(mcTableTmp)
+		output = mcr.fullRadar(dicSettings, mcTableTmp)
+		print(output)
+		for wl in dicSettings['wl']:
+			wlStr = '{:.2e}'.format(wl)
+			if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
+				output['Ze_H_{0}'.format(wlStr)] = output['spec_H_{0}'.format(wlStr)].sum(dim='vel')
+				output['MDV_H_{0}'.format(wlStr)] = (output['spec_H_{0}'.format(wlStr)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}'.format(wlStr)]
+				      
+			else:
+				output['Ze_H_{0}'.format(wlStr)] = output['spec_H_{0}'.format(wlStr)].sum(dim='vel')
+				output['Ze_V_{0}'.format(wlStr)] = output['spec_V_{0}'.format(wlStr)].sum(dim='vel')
+				output['MDV_H_{0}'.format(wlStr)] = (output['spec_H_{0}'.format(wlStr)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}'.format(wlStr)]
+				output['MDV_V_{0}'.format(wlStr)] = (output['spec_V_{0}'.format(wlStr)]*output['vel']).sum(dim='vel')/output['Ze_V_{0}'.format(wlStr)]
+	
+	else:
+	
+		output = mcr.singleParticleTrajectories(dicSettings, mcTableTmp)
+
+		#if minmax:
+	#		outName = os.environ['freq']+'GHz_output_{mode}_{vmin}_{vmax}_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode'],vmin=vmin,vmax=vmax)	
+#		else:
+#			outName = os.environ['freq']+'GHz_output_{mode}_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode'])	
+#if dicSettings['scatSet']['mode'] == 'SSRGA':
+#    outName = os.environ['freq']+'GHz_output_SSRGA.nc'
+#else:
+#    outName = os.environ['freq']+'GHz_output.nc'
+
+print('saving the output file at: '+inputPath+outName)
 #-- now save it
-output.to_netcdf(inputPath+'KaBand_output.nc')
+output.to_netcdf(inputPath+outName)
 
