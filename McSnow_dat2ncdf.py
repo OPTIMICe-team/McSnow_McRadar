@@ -8,8 +8,9 @@ import os
 
 
 experimentID = os.environ['experiment']
-inputPath = os.environ['MCexp']+'experiments/'+experimentID+'/'
-
+print(experimentID)
+inputPath = os.environ['MCexp']+'/'+experimentID+'/'
+print(inputPath)
 #inputPath = '/work/lvonterz/McSnow_habit/experiments/Jan_Niklas_frag_Leonie_setup/'
 
 data = pd.read_csv(inputPath+'mass2fr.dat',header=0)#,skiprows=1, # header=0
@@ -38,7 +39,7 @@ dataXR['sMult'].attrs={'units':'','long_name':'multiplicity of superparticle'}
 #dataXR['sMmelt'].attrs={'units':'kg','long_name':'melted or frozen water mass of superparticle'}
 dataXR['sRho_tot'].attrs={'units':'kg/m^3','long_name':'total density of superparticle'}
 dataXR = dataXR.fillna(0) 
-
+dataXR = dataXR.astype('float64')
 #save as nc
 
 dataXR.to_netcdf(inputPath+'mass2fr.nc')
