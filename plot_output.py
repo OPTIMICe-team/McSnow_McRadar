@@ -93,7 +93,9 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	atmoReindex = atmoXR.reindex_like(mcTableXR,method='nearest')
 	mcTableTmp = xr.merge([atmoReindex,mcTableXR])
 	mcTableTmp = mcTableTmp.to_dataframe()
-
+	print(mcTableTmp.sVice)
+	print(mcTableTmp.sRho_tot)
+	quit()
 	# now plotting stuff directly from McSnow output but in the shape of a velocity spectrum:
 	#print('plotting aspect ratios')
 	velBins = np.linspace(-3,0,100)

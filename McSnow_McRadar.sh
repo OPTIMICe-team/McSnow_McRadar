@@ -86,6 +86,8 @@ do
     nh2="3000" # 3000
     habit="1"
     IGF="2"
+    iceicebreak_fpm2="0" # default value is 6
+    iceicebreak_fpm1="0" # default value is 1
     
     timeend="36000"
     dt_1dprof="600"
@@ -125,7 +127,7 @@ do
     cd $cur_dir
     cp McSnow_runscripts/1d_${testcase%_*} $MC/run/1d
     # here the name of the folder is written into the environment for the other skripts to find
-    export experiment=$($MC/run/1d "onlyname" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $timeend $dt_1dprof)
+    export experiment=$($MC/run/1d "onlyname" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $iceicebreak_fpm2 $iceicebreak_fpm1 $timeend $dt_1dprof)
     echo "analyze experiment:" $experiment
     
     if [[ "$execwhat" == *Mc1* ]] ; then #run McSnow (f.e 1d-model)
@@ -136,7 +138,7 @@ do
         cd $MC/run #alternative if cheops is shut down
         
         # here McSnow is run with the setup you specify here.
-        ./1d "fullrun" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $timeend $dt_1dprof $MCexp 
+        ./1d "fullrun" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $iceicebreak_fpm2 $iceicebreak_fpm1 $timeend $dt_1dprof $MCexp 
     fi
 
     if [[ "$execwhat" == *dat2nc1* ]] ; then #run McSnow (f.e 1d-model)
