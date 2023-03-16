@@ -33,8 +33,13 @@ experimentID = os.environ['experiment']
 inputPath = os.environ['MCexp']+'/'+experimentID+'/'
 scatMode = os.environ['scatMode']
 lutPath = '/project/meteo/work/L.Terzi/McRadar/LUT/' #'/work/lvonterz/SSRGA/snowScatt/ssrga_LUT/' #'/data/optimice/McRadarLUTs/'
+if 'DDA' in scatMode:
+	lutPath = lutPath + 'DDA/'
+elif 'SSRGA' in scatMode:
+	lutPath = lutPath+ 'SSRGA/'
+elif scatMode == 'wisdom' or scatMode == 'table':
+	lutPath = lutPath + 'Tmatrix'
 domTop = inputPath.split('domtop')[1].split('_')[0].split('.')[0]
-
 
 try:
   minmax = os.environ['minmax'] 
@@ -44,7 +49,8 @@ except:
   minmax=False
   print('no minmax')
 print('loading the settings')
-
+#minmax=True
+#vmin= 180; vmax=350
 
 #-- load the settings of McSnow domain, as well as elevation you want to plot: 
 if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
@@ -53,7 +59,6 @@ else:
 	heightRes = 2
 #In order to avoid volume sampling problems, you have to insert the gridBaseArea as it was defined in the McSnow simulation
 dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
-                               #'../data/1d_habit_test_leonie.dat',#'../data/habit_1d_leonie.dat',#'../data/1d_habit_test_leonie.dat',#'../tests/data_test.dat',
                                elv=elv, freq=freq,gridBaseArea=5.0,maxHeight=int(domTop),
                                ndgsVal=50,heightRes=heightRes,convolute=convolute,scatSet={'mode':scatMode,'lutPath':lutPath,'particle_name':particle_name,'safeTmatrix':True})
 
@@ -98,19 +103,17 @@ if allTimes==True:
 else:
 	if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 		selTime = mcTable['time'].max()
-		if selTime != 600:
-			print('the McSnow simulation did not contain 600 timesteps, check your time setup!!')
-			quit()
+		
 		mcTableTmp = mcTable[times==selTime]	
 	else: # if we have trajectories it makes sense to have single_particles = True!!!
 		if single_particle == False:
 			mcTable['sMult'] = 1.0 
 		mcTableTmp = mcTable
+	print(mcTableTmp.time)
+	
 	print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
 	print(single_particle)
-	#-- now the full polarimetric output is generated (KDP, aswell as spec_H and spec_V, from which you can calculate ZeH, ZeV, ZDR, sZDR)
-	#mcr.fullRadar(dicSettings,mcTable)
-	#quit()
+	
 	if single_particle == False:
 		#print(mcTableTmp)
 		output = mcr.fullRadar(dicSettings, mcTableTmp)
@@ -130,15 +133,7 @@ else:
 	else:
 	
 		output = mcr.singleParticleTrajectories(dicSettings, mcTableTmp)
-
-		#if minmax:
-	#		outName = os.environ['freq']+'GHz_output_{mode}_{vmin}_{vmax}_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode'],vmin=vmin,vmax=vmax)	
-#		else:
-#			outName = os.environ['freq']+'GHz_output_{mode}_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode'])	
-#if dicSettings['scatSet']['mode'] == 'SSRGA':
-#    outName = os.environ['freq']+'GHz_output_SSRGA.nc'
-#else:
-#    outName = os.environ['freq']+'GHz_output.nc'
+		print(output)
 
 print('saving the output file at: '+inputPath+outName)
 #-- now save it
