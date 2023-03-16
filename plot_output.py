@@ -29,7 +29,7 @@ domTop = splitPath[0:4]
 lutPath = '/project/meteo/work/L.Terzi/McRadar/LUT/'
 
 # decide what you want to plot
-plot_initemp = True
+plot_initemp = False
 plot_inidia = False
 plot_thesis_particle_evolution = False
 mult_conc = False
@@ -93,9 +93,19 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	atmoReindex = atmoXR.reindex_like(mcTableXR,method='nearest')
 	mcTableTmp = xr.merge([atmoReindex,mcTableXR])
 	mcTableTmp = mcTableTmp.to_dataframe()
-	print(mcTableTmp.sVice)
-	print(mcTableTmp.sRho_tot)
-	quit()
+	mcTableTmp19 = mcTableTmp[(mcTableTmp.Temp<=-19) & (mcTableTmp.Temp>=-20)]
+	mTotPart = mcTableTmp19.mTot * mcTableTmp19.sMult / mcTableTmp19.sMult.sum()
+	print(mcTableTmp19.sMult.sum())
+	mTot19 = mTotPart.sum()
+	mcTableTmp10 = mcTableTmp[(mcTableTmp.Temp<=-10) & (mcTableTmp.Temp>=-11)]
+	mTotPart = mcTableTmp10.mTot * mcTableTmp10.sMult / mcTableTmp10.sMult.sum()
+	print(mcTableTmp10.sMult.sum())
+	#print(len(mcTableTmp10))
+	mTot10 = mTotPart.sum()
+	print(mTot19)
+	print(mTot10)
+	print('mass Diff',mTot10-mTot19)
+	#quit()
 	# now plotting stuff directly from McSnow output but in the shape of a velocity spectrum:
 	#print('plotting aspect ratios')
 	velBins = np.linspace(-3,0,100)
@@ -137,9 +147,9 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	plt.tight_layout()
 	plt.savefig(inputPath+'properties.png')
 	plt.close()
-	quit()
+	#quit()
 	#-- plot number of superparticles per grid cell
-
+	
 	nz = float(inputPath.split('nz')[1].split('_')[0])
 	#heightProf = pd.read_csv(inputPath+'hei2massdens.dat',header=0)#,skiprows=1, # header=0
 	#print(heightProf)
@@ -381,7 +391,11 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 	
 	if os.path.exists(inputPath+McRadar_Outname):
 		vmin=0;vmax=350
+		print(inputPath+McRadar_Outname)
+		#quit()mcTableTmp = mcTableTemp[(mcTableTemp['sMult']>vmin) & (mcTableTemp['sMult']<=vmax)]
 		output = xr.open_dataset(inputPath+McRadar_Outname)
+		
+		#quit()
 		#outPut1 = xr.open_dataset(inputPath+os.environ['freq']+'GHz_output_{mode}_180_350_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode']))
 		#outPut = xr.merge([outPut,outPut1])
 		
@@ -398,7 +412,9 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 			atmoXR = atmoPD.to_xarray()
 			atmoReindex = atmoXR.reindex_like(output,method='nearest')
 			output = xr.merge([atmoReindex,output])
-		output['sZDR'] = 10*np.log10(output['sZeH_3.12e+01']) - 10*np.log10(output['sZeV_3.12e+01'])
+		#print(dicSettings['wl'])
+		wlStr = '{:.2e}'.format(dicSettings['wl'][0])
+		output['sZDR'] = 10*np.log10(output['sZeH_{0}'.format(wlStr)]) - 10*np.log10(output['sZeV_{0}'.format(wlStr)])
 		#output = output.to_dataframe()
 		
 		##################################################################################################
@@ -409,11 +425,11 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 		axes = [fig.add_subplot(gs[0, col]) for col in range(2)]
 
 		axes[0],s_m = plot.plot_scat_particle_ID_temp(output,inputPath,'sZDR','sMult',r'ZDR$_{\rm particle}$','[dB]',ax=axes[0],cbar=False)
-		axes[0].text(6,-29,'(a)',fontsize=18)
+		axes[0].text(0,-29,'(a)',fontsize=18)
 		axes[0].set_yticks([0,-5,-10,-15,-20,-25,-30])
 
 		outputSel = output.sel(sMult=slice(0,180))
-		axes[1],s_m1=plot.plot_scat_particle_ID_temp(output,inputPath,'sKDP_3.12e+01','sMult',r'KDP$_{\rm particle}$',r'[°km$^{-3}$]',ax=axes[1],cbar=False,y_label=False)
+		axes[1],s_m1=plot.plot_scat_particle_ID_temp(output,inputPath,'sKDP_{0}'.format(wlStr),'sMult',r'KDP$_{\rm particle}$',r'[°km$^{-3}$]',ax=axes[1],cbar=False,y_label=False)
 		outputSel = output.sel(sMult=slice(180,350))
 		#ax1 = axes[1].twiny()
 		#ax1,s_m2=plot.plot_scat_particle_ID_temp(outputSel,inputPath,'sKDP_3.12e+01','sMult',r'KDP$_{\rm particle}$',r'[°km$^{-3}$]',ax=ax1,cbar=False,y_label=False)
@@ -428,7 +444,7 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 		cbar.set_label('particle ID',fontsize=16)
 		cbar.ax.tick_params(labelsize=14)
 		cbar.set_ticks(np.arange(vmin,vmax+1,50))
-		axes[1].text(0.0065,-29,'(b)',fontsize=18)
+		axes[1].text(0,-29,'(b)',fontsize=18)
 
 		if plot_thesis_particle_evolution:
 			outputSel=output.sel(sMult=10)
@@ -452,7 +468,7 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 			TempNaN = outputSel.Temp.where(~np.isnan(prop2plot))
 			axes[0].plot(prop2plot.dropna(dim='sHeight'),TempNaN.dropna(dim='sHeight'),c='k',lw=2,label='Particle C')
 			
-			prop2plot = outputSel['sKDP_3.12e+01']
+			prop2plot = outputSel['sKDP_{0}'.format(wlStr)]
 			TempNaN = outputSel.Temp.where(~np.isnan(prop2plot))
 			ax1.plot(prop2plot.dropna(dim='sHeight'),TempNaN.dropna(dim='sHeight'),c='k',lw=2,label='Particle C')
 			
@@ -460,7 +476,7 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 			prop2plot = outputSel['sZDR']
 			TempNaN = outputSel.Temp.where(~np.isnan(prop2plot))
 			axes[0].plot(prop2plot.dropna(dim='sHeight'),TempNaN.dropna(dim='sHeight'),c='k',ls='--',lw=2,label='Particle D')
-			prop2plot = outputSel['sKDP_3.12e+01']
+			prop2plot = outputSel['sKDP_{0}'.format(wlStr)]
 			TempNaN = outputSel.Temp.where(~np.isnan(prop2plot))
 			ax1.plot(prop2plot.dropna(dim='sHeight'),TempNaN.dropna(dim='sHeight'),c='k',ls='--',lw=2,label='Particle D')		
 			ax1.axhline(y=-10,ls='--',lw=2,c='r')
@@ -472,10 +488,10 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 			a.axhline(y=-10,ls='--',lw=2,c='r')
 			a.axhline(y=-20,ls='--',lw=2,c='r')
 		#plt.tight_layout()
-		plt.savefig(inputPath+'sZDR_sKDP_forward_sim.png',bbox_inches='tight')
+		plt.savefig(inputPath+'sZDR_sKDP_forward_sim_{mode}_200bins.png'.format(mode=scatMode),bbox_inches='tight')
 		#plt.savefig(inputPath+'sZDR_sKDP_forward_sim.pdf',bbox_inches='tight')
 		plt.close()
-
+		quit()
 		##################################################
 		#- plot integrated ZDR and compare to observations (Figure 5.4 in my thesis)
 		##################################################
@@ -488,8 +504,8 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 		
 		vmin=0;vmax=90
 		outputSel = output.sel(sMult=slice(vmin,vmax))
-		outputSel['ZeH'] = outputSel['sZeH_3.12e+01'].sum(dim='sMult')
-		outputSel['ZeV'] = outputSel['sZeV_3.12e+01'].sum(dim='sMult')
+		outputSel['ZeH'] = outputSel['sZeH_{0}'.format(wlStr)].sum(dim='sMult')
+		outputSel['ZeV'] = outputSel['sZeV_{0}'.format(wlStr)].sum(dim='sMult')
 		outputSel['ZDR'] = 10*np.log10(outputSel.ZeH)-10*np.log10(outputSel.ZeV)
 		sZDRmax = outputSel.sZDR.max(dim='sMult')
 		sZDRmax = sZDRmax.rolling(sHeight=20,center=True).mean()
@@ -497,8 +513,8 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 		ls1=ax[0].plot(ZDR,outputSel.Temp,c='#66CCEE',label='cold',lw=2)#c='#4477AA'
 		ls2=ax[1].plot(sZDRmax,outputSel.Temp,ls='-',c='#66CCEE',label=r'sZDR$_{\rm max}$ cold',lw=2)#c='#66CCEE',
 		
-		output['ZeH'] = output['sZeH_3.12e+01'].sum(dim='sMult')
-		output['ZeV'] = output['sZeV_3.12e+01'].sum(dim='sMult')
+		output['ZeH'] = output['sZeH_{0}'.format(wlStr)].sum(dim='sMult')
+		output['ZeV'] = output['sZeV_{0}'.format(wlStr)].sum(dim='sMult')
 		output['ZDR'] = 10*np.log10(output.ZeH)-10*np.log10(output.ZeV)
 		sZDRmax = output.sZDR.max(dim='sMult')
 		sZDRmax = sZDRmax.rolling(sHeight=20,center=True).mean()
@@ -509,8 +525,8 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 
 		vmin=180;vmax=350
 		outputSel = output.sel(sMult=slice(vmin,vmax))
-		outputSel['ZeH'] = outputSel['sZeH_3.12e+01'].sum(dim='sMult')
-		outputSel['ZeV'] = outputSel['sZeV_3.12e+01'].sum(dim='sMult')
+		outputSel['ZeH'] = outputSel['sZeH_{0}'.format(wlStr)].sum(dim='sMult')
+		outputSel['ZeV'] = outputSel['sZeV_{0}'.format(wlStr)].sum(dim='sMult')
 		outputSel['ZDR'] = 10*np.log10(outputSel.ZeH)-10*np.log10(outputSel.ZeV)
 		sZDRmax = outputSel.sZDR.max(dim='sMult')
 		sZDRmax = sZDRmax.rolling(sHeight=20,center=True).mean()
@@ -556,7 +572,7 @@ if ('trajectories' in experimentID) or ('trajectories' in inputPath):
 			a.grid()
 		#ax[0].set_zorder(1)
 		#ax[0].legend(ls,labs,bbox_to_anchor=(-0,0.8),loc='lower left',fontsize=12,ncol=3)
-		plt.savefig(inputPath+'ZDR_sZDRmax_obs.png',bbox_inches='tight')
+		plt.savefig(inputPath+'ZDR_sZDRmax_obs_{mode}.png'.format(mode=scatMode),bbox_inches='tight')
 		#plt.savefig('/home/lvonterz/thesis/plots/McSnow_chapter/ZDR_int3.pdf',bbox_inches='tight')
 		plt.close()
 		#quit()
