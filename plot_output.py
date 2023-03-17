@@ -26,7 +26,7 @@ print(inputPath)
 print('loading the settings')
 splitPath = inputPath.split('domtop')[1]
 domTop = splitPath[0:4]
-lutPath = '/project/meteo/work/L.Terzi/McRadar/LUT/'
+lutPath = os.environ['LUT_dir']
 
 # decide what you want to plot
 plot_initemp = False
@@ -93,18 +93,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	atmoReindex = atmoXR.reindex_like(mcTableXR,method='nearest')
 	mcTableTmp = xr.merge([atmoReindex,mcTableXR])
 	mcTableTmp = mcTableTmp.to_dataframe()
-	mcTableTmp19 = mcTableTmp[(mcTableTmp.Temp<=-19) & (mcTableTmp.Temp>=-20)]
-	mTotPart = mcTableTmp19.mTot * mcTableTmp19.sMult / mcTableTmp19.sMult.sum()
-	print(mcTableTmp19.sMult.sum())
-	mTot19 = mTotPart.sum()
-	mcTableTmp10 = mcTableTmp[(mcTableTmp.Temp<=-10) & (mcTableTmp.Temp>=-11)]
-	mTotPart = mcTableTmp10.mTot * mcTableTmp10.sMult / mcTableTmp10.sMult.sum()
-	print(mcTableTmp10.sMult.sum())
-	#print(len(mcTableTmp10))
-	mTot10 = mTotPart.sum()
-	print(mTot19)
-	print(mTot10)
-	print('mass Diff',mTot10-mTot19)
+	
 	#quit()
 	# now plotting stuff directly from McSnow output but in the shape of a velocity spectrum:
 	#print('plotting aspect ratios')
