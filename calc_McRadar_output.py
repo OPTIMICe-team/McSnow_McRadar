@@ -32,7 +32,7 @@ freq = np.array([float(f)*1e9 for f in freqEnv])
 experimentID = os.environ['experiment']
 inputPath = os.environ['MCexp']+'/'+experimentID+'/'
 scatMode = os.environ['scatMode']
-lutPath = '/project/meteo/work/L.Terzi/McRadar/LUT/' #'/work/lvonterz/SSRGA/snowScatt/ssrga_LUT/' #'/data/optimice/McRadarLUTs/'
+lutPath = os.environ['LUT_path'] #'/project/meteo/work/L.Terzi/McRadar/LUT/' #'/work/lvonterz/SSRGA/snowScatt/ssrga_LUT/' #'/data/optimice/McRadarLUTs/'
 if 'DDA' in scatMode:
 	lutPath = lutPath + 'DDA/'
 elif 'SSRGA' in scatMode:

@@ -35,7 +35,7 @@ export McR=/project/meteo/work/L.Terzi/McRadar/notebooks/ # folder were my McRad
 export MCexp=/project/meteo/work/L.Terzi/McSnowoutput/habit/fragmentation #second_nucleation  # folder where to store output 
 export postMcSnowDir=/project/meteo/work/L.Terzi/McSnow_habit/mcsnow/postprocessing/
 export cur_dir=$(pwd -P) #current directory
-export cry_dir=/project/meteo/work/L.Terzi/pol-scatt/DDA_compute
+export LUT_dir=/project/meteo/work/L.Terzi/McRadar/LUT/
 export freq=94.0 #35.5 #5.6 #9.6 #35.5 #9.6
 export scatMode=DDA #full #SSRGA-Rayleigh
 export particle=vonTerzi_dendrite
@@ -73,6 +73,7 @@ do
     domTop_array=(5000) #(2700 2500 2300 2100) # change domain top
     #minmax_array=(180_350) # 0_180 180_350) # 190_200 210_220 250_260 280_290 310_320 340_350) #210_220 220_230 230_240 240_250 250_260 260_270 270_280 280_290 290_300)
     agg="2" # 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
+    dep="1" # 0: no diffusion, 1: vapour diffusion
     xi0="5" 
     nz="200"
     iwc="3"
@@ -86,11 +87,11 @@ do
     nh2="0" # 3000
     habit="1"
     IGF="2"
-    iceicebreak_fpm2_array=(0) # 12 24 48) # default value is 6
+    iceicebreak_fpm2_array=(6) # 12 24 48) # default value is 6
     iceicebreak_fpm1=0 # default value is 1
     sp_kern_sig=10
-    timeend="10800" #"6000" #"10800"
-    dt_1dprof="3600" #"60" #"3600"
+    timeend="36000" #"6000" #"10800"
+    dt_1dprof="600" #"60" #"3600"
     
     for (( i_ssat = 0 ; i_ssat < ${#ssat_array[@]} ; i_ssat++ )); do
     ssat=${ssat_array[$i_ssat]}
@@ -127,7 +128,7 @@ do
 						cd $cur_dir
 						cp McSnow_runscripts/1d_${testcase%_*} $MC/run/1d
 						# here the name of the folder is written into the environment for the other skripts to find
-						export experiment=$($MC/run/1d "onlyname" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $iceicebreak_fpm2 $iceicebreak_fpm1 $sp_kern_sig $timeend $dt_1dprof)
+						export experiment=$($MC/run/1d "onlyname" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $iceicebreak_fpm2 $iceicebreak_fpm1 $sp_kern_sig $dep $timeend $dt_1dprof)
 						echo "analyze experiment:" $experiment
 						
 						if [[ "$execwhat" == *Mc1* ]] ; then #run McSnow (f.e 1d-model)
@@ -138,7 +139,7 @@ do
 							cd $MC/run #alternative if cheops is shut down
 							
 							# here McSnow is run with the setup you specify here.
-							./1d "fullrun" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $iceicebreak_fpm2 $iceicebreak_fpm1 $sp_kern_sig $timeend $dt_1dprof $MCexp 
+							./1d "fullrun" $ssat $stick $testcase  $ncl $nclmass $domTop $agg $xi0 $nz $iwc $coll_kern $nugam $mugam $bndtype $atmo $nrp0 $nh1 $nh2 $habit $IGF $iceicebreak_fpm2 $iceicebreak_fpm1 $sp_kern_sig $dep $timeend $dt_1dprof $MCexp 
 						fi
 
 						if [[ "$execwhat" == *dat2nc1* ]] ; then #run McSnow (f.e 1d-model)
