@@ -386,12 +386,17 @@ def plotPropSpecThesis(ax,heightRange,heightRes,mcTable,velBins,prop,savefig=Fal
                                     coords={'T':Temp.reshape(1),'vel':velBins[0:-1]})
             
             binnedXR = xr.concat([binnedXR,tmpXR],dim='T')
+    binnedXR = binnedXR.where(~np.isnan(binnedXR['T']), drop=True)
     if diff==False: 
         if (prop == 'dia' or prop == 'number_conc' or prop == 'mTot'):
+            
             plot=ax.pcolormesh(binnedXR.vel,binnedXR['T'],binnedXR.T,cmap=cmap,norm=colors.LogNorm(vmin=10**vmin,vmax=10**vmax))#,cmap=cmap,add_colorbar=False)
         else:
-            plot=binnedXR.plot(ax=ax,x='vel',vmin=vmin,vmax=vmax,cmap=cmap,add_colorbar=False)
+            
+            plot=ax.pcolormesh(binnedXR.vel,binnedXR['T'],binnedXR.T,cmap=cmap,vmin=vmin,vmax=vmax)
+            #plot=binnedXR.plot(ax=ax,x='vel',vmin=vmin,vmax=vmax,cmap=cmap,add_colorbar=False)
     else:
+        
         plot=binnedXR.plot(ax=ax,x='vel',vmin=vmin,vmax=vmax,cmap=cmap,add_colorbar=False)
    #if (prop == 'dia' or prop == 'number_conc' or prop == 'mTot'):
    #     plot=ax.pcolormesh(binnedXR.vel,binnedXR['T'],binnedXR.T,cmap=cmap,norm=colors.LogNorm(vmin=10**vmin,vmax=10**vmax))#,cmap=cmap,add_colorbar=False)
@@ -526,7 +531,7 @@ def plotMomentsAlltime(dicSettings,output,inputPath,convoluted=False):
         #plt.savefig(inputPath+'1d_habit_ZDR_{0}.png'.format(wlStr), format='png', dpi=200, bbox_inches='tight')
         #plt.close()
 
-              axes[1].plot(mcr.lin2db(output['Ze_H_{0}'.format(freq)]),output['range'],linewidth=2) # TODO: change back to ZeH
+              axes[1].plot(mcr.lin2db(output['Ze_H_{0}'.format(freq)]),output['range'],linewidth=2) 
               axes[1].set_xlabel('Z_H [dB]')
               axes[1].set_title('Ze_H')
               #plt.ylim(0, 5000)
