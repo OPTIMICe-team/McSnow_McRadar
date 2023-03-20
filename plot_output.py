@@ -25,7 +25,7 @@ print(inputPath)
 #convolute=os.environ['convolute']
 print('loading the settings')
 splitPath = inputPath.split('domtop')[1]
-domTop = '2500'#splitPath[0:4]
+domTop = splitPath[0:4]
 lutPath = os.environ['LUT_dir']
 
 # decide what you want to plot
