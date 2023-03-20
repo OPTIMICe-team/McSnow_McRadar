@@ -48,7 +48,7 @@ dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
 
 print('loading the McSnow output')
 # now generate a table from the McSnow output. You can specify xi0, if it is not stored in the table (like in my cases)
-mcTable = mcr.getMcSnowTable('mass2fr.nc')#dicSettings['dataPath'])
+mcTable = mcr.getMcSnowTable(dicSettings['dataPath'])
 #-- now select time step to use (600 Minutes is usually used)
 #print('selecting time step = 600 min  ')
 
@@ -81,7 +81,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	mcTable = mcTable.sort_values('sHeight')
 	mcTable = mcTable[times==selTime]
 	
-	atmoFile = np.loadtxt('atmo.dat')#inputPath+'atmo.dat')
+	atmoFile = np.loadtxt(inputPath+'atmo.dat')
 	plot.plotAtmo(atmoFile,inputPath)
 	height = atmoFile[:,0]
 	Temp = atmoFile[:,2] -273.15
