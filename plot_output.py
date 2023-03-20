@@ -48,7 +48,7 @@ dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
 
 print('loading the McSnow output')
 # now generate a table from the McSnow output. You can specify xi0, if it is not stored in the table (like in my cases)
-mcTable = mcr.getMcSnowTable(dicSettings['dataPath'])
+mcTable = mcr.getMcSnowTable('mass2fr.nc')#dicSettings['dataPath'])
 #-- now select time step to use (600 Minutes is usually used)
 #print('selecting time step = 600 min  ')
 
@@ -81,7 +81,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	mcTable = mcTable.sort_values('sHeight')
 	mcTable = mcTable[times==selTime]
 	
-	atmoFile = np.loadtxt(inputPath+'atmo.dat')
+	atmoFile = np.loadtxt('atmo.dat')#inputPath+'atmo.dat')
 	plot.plotAtmo(atmoFile,inputPath)
 	height = atmoFile[:,0]
 	Temp = atmoFile[:,2] -273.15
@@ -111,7 +111,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	for i,var in enumerate(varVec):	
 		print(var)
 		ax[0,i]=plot.plotPropSpecThesis(ax[0,i],dicSettings['heightRange'],dicSettings['heightRes'],mcTableTmp,velBins,var)
-		ax[0,i].set_ylim([0,mcTableTmp['Temp'].min()-1])
+		ax[0,i].set_ylim([mcTableTmp['Temp'].max()+1,mcTableTmp['Temp'].min()-1])
 		ax[0,i].set_xlim([-2,0])
 		ax[0,i].tick_params(axis='both',labelsize=16)
 		ax[0,i].text(ax[0,i].get_xlim()[0]+0.04*(ax[0,i].get_xlim()[1]-ax[0,i].get_xlim()[0]),-27,'('+string.ascii_lowercase[i]+')',fontsize=18)
@@ -130,7 +130,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 		print(var)
 		ax[1,i]=plot.plotPropSpecThesis(ax[1,i],dicSettings['heightRange'],dicSettings['heightRes'],mcTableTmp,velBins,var)
 		ax[1,i].set_xlim([-2,0])
-		ax[1,i].set_ylim([0,mcTableTmp['Temp'].min()-1])
+		ax[1,i].set_ylim([mcTableTmp['Temp'].max()+1,mcTableTmp['Temp'].min()-1])
 		ax[1,i].tick_params(axis='both',labelsize=16)
 		ax[1,i].text(ax[1,i].get_xlim()[0]+0.04*(ax[1,i].get_xlim()[1]-ax[1,i].get_xlim()[0]),-27,'('+string.ascii_lowercase[i+3]+')',fontsize=18)
 		ax[1,i].grid(ls='-.')
