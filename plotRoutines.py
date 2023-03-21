@@ -511,59 +511,7 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
 
 		plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
 		plt.close()
-def plotMomentsAlltime(dicSettings,output,inputPath,convoluted=False):
-    for wl in dicSettings['wl']:
-        wlStr = '{:.2e}'.format(wl)
-        freq = (constants.c / float(wlStr))  *1e3 / 1e9
-        freq = '{:.1f}'.format(freq)
-     
-        if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
-          if convoluted == True:
-              saveName = '1d_habit_moments_{0}_convoluted.png'.format(freq)
-              fig,axes = plt.subplots(ncols=2,figsize=(10,5),sharey=True)
-              # plot ZDR
-              output['MDV_H_{0}'.format(freq)].plot(ax=axes[0],y='range', lw=2)
-              axes[0].set_title('rad: {0} elv: {1}, MDV'.format(freq, dicSettings['elv']))
-              #axes[0].set_ylim(0, 5000)
-              axes[0].grid(True,ls='-.')
-              axes[0].set_xlabel('MDV [m/s]')
-              axes[0].set_ylim([0,dicSettings['maxHeight']])
-        #plt.savefig(inputPath+'1d_habit_ZDR_{0}.png'.format(wlStr), format='png', dpi=200, bbox_inches='tight')
-        #plt.close()
 
-              axes[1].plot(mcr.lin2db(output['Ze_H_{0}'.format(freq)]),output['range'],linewidth=2) 
-              axes[1].set_xlabel('Z_H [dB]')
-              axes[1].set_title('Ze_H')
-              #plt.ylim(0, 5000)
-              #plt.xlim(-3, 0)
-              axes[1].grid(True,ls='-.')
-              axes[1].set_ylim([0,dicSettings['maxHeight']])
-              plt.tight_layout()
-              plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
-              plt.close()
-          else: 
-              saveName = '1d_habit_moments_{wl}_{mode}_alltimes.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'])
-           
-              fig,axes = plt.subplots(nrows=2,figsize=(10,5),sharex=True)
-              output['MDV_H_{0}'.format(wlStr)].plot(ax=axes[0],y='range',cmap='jet',vmin=-3,vmax=1)
-              axes[0].set_title('rad: {0} elv: {1}, MDV'.format(freq, dicSettings['elv']))
-              #axes[0].set_ylim(0, 5000)
-              axes[0].grid(True,ls='-.')
-              #axes[0].set_xlabel('time')
-              axes[0].set_ylim([0,dicSettings['maxHeight']])
-        
-              #axes[1].plot(mcr.lin2db(output['Ze_H_{0}'.format(wlStr)]),output['range'],linewidth=2) # TODO: change back to ZeH
-              (mcr.lin2db(output['Ze_H_{0}'.format(wlStr)])).plot(ax=axes[1],y='range',cmap='jet',vmin=-30,vmax=20)
-              axes[1].set_xlabel('time')
-              axes[1].set_title('Ze_H')
-              #plt.ylim(0, 5000)
-              #plt.xlim(-3, 0)
-              axes[1].grid(True,ls='-.')
-              axes[1].set_ylim([0,dicSettings['maxHeight']])
-              plt.tight_layout()
-            
-        plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
-        plt.close()
 def plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,plotTemp=False):
     #for wl in dicSettings['wl']:
     #wlStr1 = '{:.2e}'.format(dicSettings['wl'][0])
@@ -575,7 +523,7 @@ def plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,plotTemp
 	if convoluted == True:
 		if plotTemp == True:
 			saveName = '1d_habit_DWR_{freq1}_{freq2}_convoluted_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-			vary = 'T'; varUnit = '[°C]'
+			vary = 'Temp'; varUnit = '[°C]'
 			ylim = [0,-30]
 		else:
 			saveName = '1d_habit_DWR_{freq1}_{freq2}_convoluted_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
@@ -635,7 +583,7 @@ def plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,p
 	if convoluted == True:
 		if plotTemp == True:
 			saveName = '1d_habit_sDWR_{freq1}_{freq2}_convoluted_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-			vary = 'T';varUnit = '[°C]'
+			vary = 'Temp';varUnit = '[°C]'
 			ylim = [0,-30]
 		else:
 			saveName = '1d_habit_sDWR_{freq1}_{freq2}_convoluted_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
@@ -1104,32 +1052,6 @@ def plotProfilesObsDWR(dataLV2,outPath,ylim=False):
         plt.close()
         print(ti,' finished')    
         
-'''        
-def plotPSD(dicSettings,mcTable,dBins,inputPath):
-# plots the PSD binned in D bins, dBins in cm
-    for i, heightEdge0 in enumerate(dicSettings['heightRange'][::-1]):
-        heightEdge1 = heightEdge0 + dicSettings['heightRes']
-        height = heightEdge0+dicSettings['heightRes']/2
-        mcTableTmp = mcTable[(mcTable['sHeight']>heightEdge0) &
-                             (mcTable['sHeight']<=heightEdge1)].copy()
-        
-        
-        mcTableTmpMono = mcTableTmp[mcTableTmp['sNmono'] == 1].copy()
-        mcTableTmpAgg = mcTableTmp[mcTableTmp['sNmono'] > 1].copy()
-        plt.xscale('log')
-        #plt.yscale('log')
-        plt.hist(mcTableTmpMono.dia_cm,bins=dBins,label='Crystal')
-        plt.hist(mcTableTmpAgg.dia_cm,bins=dBins,label='Agg')
-        plt.ylabel('#(SP)')
-        plt.xlabel(r'D [cm]')
-        plt.title('Height: ' + str(height))
-        plt.grid(which='both')
-        plt.legend()
-        outfileName = 'histD_height_' + str(height)
-        plt.savefig(inputPath + '/' + outfileName + '.png')
-        plt.show()
-        quit()
-'''        
 def plot_agg_kernel_xr(ax,data,kernel,height,cmap='viridis',noN=False):
     
     #if noN==True:
@@ -1519,18 +1441,21 @@ def plotHeightProf(nz,mcTable,inputPath,dicSettings):
   #print(Heightrange)
   #quit()  
   
-def plotPSD(mcTable,dicSettings,inputPath,bins,var,gam=None,fac=1,xlim=None,ticks=None):
+def plotPSD(mcTable,dicSettings,inputPath,bins,var,gam=None,fac=1,xlim=None,ticks=None,heightEdge0=2900,unit='',sepMono=False):
   #for i, heightEdge0 in enumerate(dicSettings['heightRange'][::-1]):
-    heightEdge0 = 2900
     heightEdge1 = heightEdge0 + dicSettings['heightRes']
     height = heightEdge0+dicSettings['heightRes']/2 
     mcTableTmp = mcTable[(mcTable['sHeight']>heightEdge0) &(mcTable['sHeight']<=heightEdge1)].copy()
     
     fig,ax = plt.subplots()
-    ax.hist(mcTableTmp[var]*fac,bins=200,weights=mcTableTmp.sMult)
-    #if gam.any():
-      # you need to plot it in mass
-    #  ax.plot(bins,gam)
+    if sepMono:
+        mcTableMono = mcTableTmp[mcTableTmp.sNmono == 1]
+        mcTableAgg = mcTableTmp[mcTableTmp.sNmono > 1]
+        ax.hist(mcTableAgg[var]*fac,bins=200,weights=mcTableAgg.sMult,label='Agg')
+        ax.hist(mcTableMono[var]*fac,bins=200,weights=mcTableMono.sMult,label='Mono')
+        ax.legend()
+    else:
+        ax.hist(mcTableTmp[var]*fac,bins=200,weights=mcTableTmp.sMult)
       
     ax.set_yscale('log')
     if xlim:
@@ -1539,7 +1464,7 @@ def plotPSD(mcTable,dicSettings,inputPath,bins,var,gam=None,fac=1,xlim=None,tick
       ax.set_xticks(ticks)
     #ax.set_yscale('log')
     ax.grid()
-    ax.set_xlabel(var)
+    ax.set_xlabel(var+' '+unit)
     ax.set_ylabel('#')
     #ax.set_xlim(0,0.1)#[10**-3*10,0.5*10**0])
     plt.tight_layout()
