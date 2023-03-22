@@ -432,11 +432,11 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
 		if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
 
 			if plotTemp == True:
-				saveName = '1d_habit_moments_{0}_{1}_{2}_Temp.png'.format(freq,dicSettings['scatSet']['mode'],dicSettings['elv'])
+				saveName = '1d_habit_moments_freq{0}_elv{1}_{2}_Temp.png'.format(freq,dicSettings['scatSet']['mode'],dicSettings['elv'])
 				vary='T'; varUnit = '[°C]'
 				ylim = [0,-30]
 			else:
-				saveName = '1d_habit_moments_{0}_{1}_{2}.png'.format(freq,dicSettings['scatSet']['mode'],dicSettings['elv'])
+				saveName = '1d_habit_moments_freq{0}_elv{1}_{2}.png'.format(freq,dicSettings['scatSet']['mode'],dicSettings['elv'])
 				vary='range'; varUnit = '[m]'
 				ylim = [0,dicSettings['maxHeight']]
 
@@ -467,10 +467,10 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
 		else:
 
 			if plotTemp == True:
-				saveName = '1d_habit_moments_{wl}_{elv}_{mode}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+				saveName = '1d_habit_moments_freq{freq}_elv{elv}_{mode}_Temp.png'.format(freq=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 			else:
 
-				saveName = '1d_habit_moments_{wl}_{elv}_{mode}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+				saveName = '1d_habit_moments_freq{freq}_elv{elv}_{mode}.png'.format(freq=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 
 			#plot KDP 
 			if plotTemp == True:
@@ -522,11 +522,11 @@ def plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,plotTemp
 	freq2 = '{:.1f}'.format(freq2)
 	#if convoluted == True:
 	if plotTemp == True:
-		saveName = '1d_habit_DWR_{freq1}_{freq2}_{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+		saveName = '1d_habit_DWR_{freq1}_{freq2}_elv{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 		vary = 'Temp'; varUnit = '[°C]'
 		ylim = [0,-30]
 	else:
-		saveName = '1d_habit_DWR_{freq1}_{freq2}_{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+		saveName = '1d_habit_DWR_{freq1}_{freq2}_elv{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 		vary = 'range'; varUnit = '[m]'
 		ylim = [0,dicSettings['maxHeight']]
 	
@@ -558,11 +558,11 @@ def plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,p
 	freq2 = '{:.1f}'.format(freq2)
 	if convoluted == True:
 		if plotTemp == True:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_elv{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
 			vary = 'Temp';varUnit = '[°C]'
 			ylim = [0,-30]
 		else:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_elv{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
 			vary = 'range'
 			varUnit = '[m]'
 			ylim = [0,dicSettings['maxHeight']]
@@ -570,11 +570,11 @@ def plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,p
 		
 	else: 
 		if plotTemp == True:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_elv{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 			vary = 'T';varUnit = '[°C]'
 			ylim = [0,-30]
 		else:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_elv{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 			vary = 'range';varUnit = '[m]'
 			ylim = [0,dicSettings['maxHeight']]
 
@@ -630,15 +630,15 @@ def plotSpectra(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
             '''
             #else: 
             if plotTemp == True:
-                saveName = '1d_habit_spectra_{wl}_{mode}_{part}_{elv}_Temp.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],
-                																			part=dicSettings['scatSet']['particle_name'],elv=dicSettings['elv'])
+                saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}_{part}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],
+                																			part=dicSettings['scatSet']['particle_name'])
                 specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
                 vary='Temp';label = 'T [°C]'
                 ylim = [0,-30]
             else:
-                saveName = '1d_habit_spectra_{wl}_{mode}_{part}_{elv}.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],
-                																		part=dicSettings['scatSet']['particle_name'],
-                																		elv=dicSettings['elv'])
+                saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}_{part}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],
+                																		part=dicSettings['scatSet']['particle_name'])
+                																		
                 specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
                 vary = 'range'; label = 'range [m]'
                 ylim = [0,dicSettings['maxHeight']]
@@ -671,14 +671,14 @@ def plotSpectra(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
         	#else: 
             if plotTemp == True:
                 if minmax:
-                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}_{minmax}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],minmax=minmax)
+                    saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}_{minmax}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],minmax=minmax)
                 else:
-                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+                    saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
             else:
                 if minmax:
-                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}_{minmax}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],minmax=minmax)
+                    saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}_{minmax}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],minmax=minmax)
                 else:
-                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+                    saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
     
                 
                 specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
