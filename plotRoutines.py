@@ -432,11 +432,11 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
 		if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
 
 			if plotTemp == True:
-				saveName = '1d_habit_moments_{0}_{1}_Temp.png'.format(freq,dicSettings['scatSet']['mode'])
+				saveName = '1d_habit_moments_{0}_{1}_{2}_Temp.png'.format(freq,dicSettings['scatSet']['mode'],dicSettings['elv'])
 				vary='T'; varUnit = '[°C]'
 				ylim = [0,-30]
 			else:
-				saveName = '1d_habit_moments_{0}_{1}.png'.format(freq,dicSettings['scatSet']['mode'])
+				saveName = '1d_habit_moments_{0}_{1}_{2}.png'.format(freq,dicSettings['scatSet']['mode'],dicSettings['elv'])
 				vary='range'; varUnit = '[m]'
 				ylim = [0,dicSettings['maxHeight']]
 
@@ -467,10 +467,10 @@ def plotMoments(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
 		else:
 
 			if plotTemp == True:
-				saveName = '1d_habit_moments_{wl}_{mode}_Temp.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'])
+				saveName = '1d_habit_moments_{wl}_{elv}_{mode}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 			else:
 
-				saveName = '1d_habit_moments_{wl}_{mode}.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'])
+				saveName = '1d_habit_moments_{wl}_{elv}_{mode}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 
 			#plot KDP 
 			if plotTemp == True:
@@ -520,55 +520,31 @@ def plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,plotTemp
 	freq2 = (constants.c / float(wlStr2))  *1e3 / 1e9
 	freq1 = '{:.1f}'.format(freq1)
 	freq2 = '{:.1f}'.format(freq2)
-	if convoluted == True:
-		if plotTemp == True:
-			saveName = '1d_habit_DWR_{freq1}_{freq2}_convoluted_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-			vary = 'Temp'; varUnit = '[°C]'
-			ylim = [0,-30]
-		else:
-			saveName = '1d_habit_DWR_{freq1}_{freq2}_convoluted_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-			vary = 'range'; varUnit = '[m]'
-			ylim = [0,dicSettings['maxHeight']]
-
-		fig,axes = plt.subplots(figsize=(5,4))
-		DWR = mcr.lin2db(output['Ze_H_{0}'.format(wlStr1)]) - mcr.lin2db(output['Ze_H_{0}'.format(wlStr2)])
-		#DWR.plot(ax=axes,y='range', lw=2)
-		axes.plot(DWR,output[vary],lw=2)
-		#axes.set_title('DWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
-		#axes[0].set_ylim(0, 5000)
-		axes.grid(True,ls='-.')
-		axes.set_xlabel(r'DWR$_{{{freq1},{freq2}}}$ [dB]'.format(freq1=freq1,freq2=freq2),fontsize=16)
-		axes.set_ylim(ylim)
-		axes.set_ylabel(vary+' '+varUnit,fontsize=16)
-		axes.tick_params(axis='both',labelsize=14)
-	  
-	else: 
-		if plotTemp == True:
-			saveName = '1d_habit_DWR_{freq1}_{freq2}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-			vary = 'T'; varUnit = '[°C]'
-			ylim = [0,-30]
-		else:
-			saveName = '1d_habit_DWR_{freq1}_{freq2}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-			vary = 'range'; varUnit = '[m]'
-			ylim = [0,dicSettings['maxHeight']]
+	#if convoluted == True:
+	if plotTemp == True:
+		saveName = '1d_habit_DWR_{freq1}_{freq2}_{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+		vary = 'Temp'; varUnit = '[°C]'
+		ylim = [0,-30]
+	else:
+		saveName = '1d_habit_DWR_{freq1}_{freq2}_{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+		vary = 'range'; varUnit = '[m]'
+		ylim = [0,dicSettings['maxHeight']]
+	
 		
 
 		#saveName = '1d_habit_DWR_{freq1}_{freq2}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
-		   
-		fig,axes = plt.subplots(figsize=(5,4))
-		Ze1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)].sum(dim='vel'))
-		Ze2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)].sum(dim='vel'))
-		DWR = Ze1 - Ze2
-		#DWR.plot(ax=axes,y='range', lw=2)
-		axes.plot(DWR,output[vary],lw=2)
-		axes.set_ylabel(vary+' '+varUnit,fontsize=16)
-		axes.tick_params(axis='both',labelsize=14)
-		#axes.set_title('DWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
-		#axes[0].set_ylim(0, 5000)
-		axes.grid(True,ls='-.')
-		axes.set_xlabel(r'DWR$_{{{freq1},{freq2}}}$ [dB]'.format(freq1=freq1,freq2=freq2),fontsize=16)
-		axes.set_ylim(ylim)
-		                  
+	fig,axes = plt.subplots(figsize=(5,4))
+	DWR = mcr.lin2db(output['Ze_H_{0}'.format(wlStr1)]) - mcr.lin2db(output['Ze_H_{0}'.format(wlStr2)])
+	#DWR.plot(ax=axes,y='range', lw=2)
+	axes.plot(DWR,output[vary],lw=2)
+	#axes.set_title('DWR_{freq1}_{freq2}'.format(freq1=freq1,freq2=freq2))
+	#axes[0].set_ylim(0, 5000)
+	axes.grid(True,ls='-.')
+	axes.set_xlabel(r'DWR$_{{{freq1},{freq2}}}$ [dB]'.format(freq1=freq1,freq2=freq2),fontsize=16)
+	axes.set_ylim(ylim)
+	axes.set_ylabel(vary+' '+varUnit,fontsize=16)
+	axes.tick_params(axis='both',labelsize=14)	   
+		
 	plt.tight_layout()        
 	plt.savefig(inputPath+saveName, format='png', dpi=200, bbox_inches='tight')
 	plt.close()
@@ -582,66 +558,48 @@ def plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,convoluted=False,p
 	freq2 = '{:.1f}'.format(freq2)
 	if convoluted == True:
 		if plotTemp == True:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_convoluted_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
 			vary = 'Temp';varUnit = '[°C]'
 			ylim = [0,-30]
 		else:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_convoluted_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
 			vary = 'range'
 			varUnit = '[m]'
 			ylim = [0,dicSettings['maxHeight']]
 
-		fig,axes = plt.subplots(figsize=(5,4))
-		specH1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)])
-		specH1 = specH1.where(specH1 > -40)
-		specH2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)])
-		specH2 = specH2.where(specH2 > -40)
-
-		DWR =specH1 - specH2
-		#DWR.plot(ax=axes,y='range', vmin=0, vmax=15, cmap=getNewNipySpectral(),cbar_kwargs={'label':'sDWR [dB]'})
-		plot = axes.pcolormesh(output.vel,output[vary],DWR,vmin=0, vmax=15, cmap=getNewNipySpectral())
-		cb = plt.colorbar(plot,ax=axes,pad=0.02,aspect=20)#,ticks=v1)
-		cb.set_label(r'sDWR$_{{{freq1},{freq2}}}$'.format(freq1=freq1,freq2=freq2),fontsize=16)
-		cb.ax.tick_params(labelsize=14)
-		axes.set_xlabel('Doppler velocity [m/s]',fontsize=16)
-		axes.set_ylabel(vary+' '+varUnit,fontsize=16)
-		axes.tick_params(axis='both',labelsize=14)
-		#axes[0].set_ylim(0, 5000)
-		axes.grid(True,ls='-.')
-		#axes.set_xlabel('DWR [dB]')
-		axes.set_ylim(ylim)
-		axes.set_xlim(-2, 0)
+		
 	else: 
 		if plotTemp == True:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 			vary = 'T';varUnit = '[°C]'
 			ylim = [0,-30]
 		else:
-			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
+			saveName = '1d_habit_sDWR_{freq1}_{freq2}_{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
 			vary = 'range';varUnit = '[m]'
 			ylim = [0,dicSettings['maxHeight']]
 
 		#saveName = '1d_habit_sDWR_{freq1}_{freq2}_{mode}.png'.format(freq1=freq1,freq2=freq2,mode=dicSettings['scatSet']['mode'])
 
-		fig,axes = plt.subplots(figsize=(5,4))
-		specH1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)])
-		specH1 = specH1.where(specH1 > -40)
-		specH2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)])
-		specH2 = specH2.where(specH2 > -40)
+	fig,axes = plt.subplots(figsize=(5,4))
+	specH1 = mcr.lin2db(output['spec_H_{0}'.format(wlStr1)])
+	specH1 = specH1.where(specH1 > -40)
+	specH2 = mcr.lin2db(output['spec_H_{0}'.format(wlStr2)])
+	specH2 = specH2.where(specH2 > -40)
 
-		DWR =specH1 - specH2
-		plot = axes.pcolormesh(output.vel,output[vary],DWR,vmin=0, vmax=15, cmap=getNewNipySpectral())
-		cb = plt.colorbar(plot,ax=axes,pad=0.02,aspect=20)#,ticks=v1)
-		cb.set_label(r'sDWR$_{{{freq1},{freq2}}}$'.format(freq1=freq1,freq2=freq2),fontsize=16)
-		cb.ax.tick_params(labelsize=14)
-		axes.set_xlabel('Doppler velocity [m/s]',fontsize=16)
-		axes.set_ylabel(vary+' '+varUnit,fontsize=16)
-		axes.tick_params(axis='both',labelsize=14)
-		#axes[0].set_ylim(0, 5000)
-		axes.grid(True,ls='-.')
-		#axes.set_xlabel('DWR [dB]')
-		axes.set_ylim(ylim)
-		axes.set_xlim(-2, 0)                      
+	DWR =specH1 - specH2
+	#DWR.plot(ax=axes,y='range', vmin=0, vmax=15, cmap=getNewNipySpectral(),cbar_kwargs={'label':'sDWR [dB]'})
+	plot = axes.pcolormesh(output.vel,output[vary],DWR,vmin=0, vmax=15, cmap=getNewNipySpectral())
+	cb = plt.colorbar(plot,ax=axes,pad=0.02,aspect=20)#,ticks=v1)
+	cb.set_label(r'sDWR$_{{{freq1},{freq2}}}$'.format(freq1=freq1,freq2=freq2),fontsize=16)
+	cb.ax.tick_params(labelsize=14)
+	axes.set_xlabel('Doppler velocity [m/s]',fontsize=16)
+	axes.set_ylabel(vary+' '+varUnit,fontsize=16)
+	axes.tick_params(axis='both',labelsize=14)
+	#axes[0].set_ylim(0, 5000)
+	axes.grid(True,ls='-.')
+	#axes.set_xlabel('DWR [dB]')
+	axes.set_ylim(ylim)
+	axes.set_xlim(-2, 0)                     
 	plt.tight_layout()        
 	plt.savefig(inputPath+saveName, format='png', dpi=200)#, bbox_inches='tight')
 	plt.close()
@@ -702,26 +660,26 @@ def plotSpectra(dicSettings,output,inputPath,convoluted=False,minmax=None,plotTe
             ax.grid(True,ls='-.')      
             plt.tight_layout()
         else:
-            if convoluted == True:
-                saveName = '1d_habit_spectra_{0}_convoluted.png'.format(freq)
-                specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
-                specV = mcr.lin2db(output['spec_V_{0}'.format(wlStr)])
-                specH = specH.where(specH > -40)
-                specV =  specV.where(specV > -40)
-                #dataSmooth = specTable.rolling(vel=10,min_periods=1,center=True).mean()            
-                ZDR = specH.rolling(vel=10,min_periods=1,center=True).mean() - specV.rolling(vel=10,min_periods=1,center=True).mean()
-            else: 
-                if plotTemp == True:
-                    if minmax:
-                        saveName = '1d_habit_spectra_{wl}_{mode}_{minmax}_Temp.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],minmax=minmax)
-                    else:
-                        saveName = '1d_habit_spectra_{wl}_{mode}_Temp.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'])
+            #if convoluted == True:
+            #saveName = '1d_habit_spectra_{0}_convoluted.png'.format(freq)
+            specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
+            specV = mcr.lin2db(output['spec_V_{0}'.format(wlStr)])
+            specH = specH.where(specH > -40)
+            specV =  specV.where(specV > -40)
+            #dataSmooth = specTable.rolling(vel=10,min_periods=1,center=True).mean()            
+            ZDR = specH.rolling(vel=10,min_periods=1,center=True).mean() - specV.rolling(vel=10,min_periods=1,center=True).mean()
+        	#else: 
+            if plotTemp == True:
+                if minmax:
+                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}_{minmax}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],minmax=minmax)
                 else:
-                    if minmax:
-                        saveName = '1d_habit_spectra_{wl}_{mode}_{minmax}.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'],minmax=minmax)
-                    else:
-                        saveName = '1d_habit_spectra_{wl}_{mode}.png'.format(wl=freq,mode=dicSettings['scatSet']['mode'])
-        
+                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}_Temp.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+            else:
+                if minmax:
+                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}_{minmax}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'],minmax=minmax)
+                else:
+                    saveName = '1d_habit_spectra_{wl}_{elv}_{mode}.png'.format(wl=freq,elv=dicSettings['elv'],mode=dicSettings['scatSet']['mode'])
+    
                 
                 specH = mcr.lin2db(output['spec_H_{0}'.format(wlStr)])
                 specV = mcr.lin2db(output['spec_V_{0}'.format(wlStr)])
