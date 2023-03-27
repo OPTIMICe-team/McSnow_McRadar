@@ -25,7 +25,9 @@ allTimes=False
 single_particle=str2bool(os.environ['singleParticle'])
 convolute=str2bool(os.environ['convolute'])
 freqEnv = os.environ['freq'].split('_')
-elv = float(os.environ['elv'])
+elvEnv = os.environ['elv'].split('_')
+#elv = float(os.environ['elv'])
+elv = np.array([float(e) for e in elvEnv])
 particle_name = os.environ['particle']
 outName = os.environ['McRadarfileName']
 freq = np.array([float(f)*1e9 for f in freqEnv])
@@ -80,6 +82,7 @@ if allTimes==True:
 		outputTime = mcr.fullRadar(dicSettings, mcTableTmp)
 		print(output)
 		for wl in dicSettings['wl']:
+			
 			wlStr = '{:.2e}'.format(wl)
 			if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
 				outputTime['Ze_H_{0}'.format(wlStr)] = outputTime['spec_H_{0}'.format(wlStr)].sum(dim='vel')
@@ -109,26 +112,24 @@ else:
 		if single_particle == False:
 			mcTable['sMult'] = 1.0 
 		mcTableTmp = mcTable
-	print(mcTableTmp.time)
-	
 	print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
-	print(single_particle)
 	
 	if single_particle == False:
 		#print(mcTableTmp)
 		output = mcr.fullRadar(dicSettings, mcTableTmp)
 		print(output)
 		for wl in dicSettings['wl']:
-			wlStr = '{:.2e}'.format(wl)
-			if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
-				output['Ze_H_{0}'.format(wlStr)] = output['spec_H_{0}'.format(wlStr)].sum(dim='vel')
-				output['MDV_H_{0}'.format(wlStr)] = (output['spec_H_{0}'.format(wlStr)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}'.format(wlStr)]
-				      
-			else:
-				output['Ze_H_{0}'.format(wlStr)] = output['spec_H_{0}'.format(wlStr)].sum(dim='vel')
-				output['Ze_V_{0}'.format(wlStr)] = output['spec_V_{0}'.format(wlStr)].sum(dim='vel')
-				output['MDV_H_{0}'.format(wlStr)] = (output['spec_H_{0}'.format(wlStr)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}'.format(wlStr)]
-				output['MDV_V_{0}'.format(wlStr)] = (output['spec_V_{0}'.format(wlStr)]*output['vel']).sum(dim='vel')/output['Ze_V_{0}'.format(wlStr)]
+			for elv in dicSettings['elv']:
+				wlStr = '{:.2e}'.format(wl)
+				if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
+					output['Ze_H_{0}_elv{1}'.format(wlStr,elv)] = output['spec_H_{0}_elv{1}'.format(wlStr,elv)].sum(dim='vel')
+					output['MDV_H_{0}_elv{1}'.format(wlStr,elv)] = (output['spec_H_{0}_elv{1}'.format(wlStr,elv)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}_elv{1}'.format(wlStr,elv)]
+						  
+				else:
+					output['Ze_H_{0}_elv{1}'.format(wlStr,elv)] = output['spec_H_{0}_elv{1}'.format(wlStr,elv)].sum(dim='vel')
+					output['Ze_V_{0}_elv{1}'.format(wlStr,elv)] = output['spec_V_{0}_elv{1}'.format(wlStr,elv)].sum(dim='vel')
+					output['MDV_H_{0}_elv{1}'.format(wlStr,elv)] = (output['spec_H_{0}_elv{1}'.format(wlStr,elv)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}_elv{1}'.format(wlStr,elv)]
+					output['MDV_V_{0}_elv{1}'.format(wlStr,elv)] = (output['spec_V_{0}_elv{1}'.format(wlStr,elv)]*output['vel']).sum(dim='vel')/output['Ze_V_{0}_elv{1}'.format(wlStr,elv)]
 	
 	else:
 	

@@ -13,7 +13,9 @@ def str2bool(v):
   
 freqEnv = os.environ['freq'].split('_')
 print(freqEnv)
-elv = float(os.environ['elv'])
+elvEnv = os.environ['elv'].split('_')
+#elv = float(os.environ['elv'])
+elv = np.array([float(e) for e in elvEnv])
 particle_name = os.environ['particle']
 freq = np.array([float(f)*1e9 for f in freqEnv])
 experimentID = os.environ['experiment']
@@ -98,20 +100,23 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	
 	mcTableTmp = xr.merge([atmoReindex,mcTableXR])
 	mcTableTmp = mcTableTmp.to_dataframe()
-	
+	mcTableMono = mcTableTmp[mcTableTmp.sNmono==1]
+	print(mcTableMono)
+	print('total mass of Mono ',mcTableMono.mTot.sum())
 	#quit()
 	# now plotting stuff directly from McSnow output but in the shape of a velocity spectrum:
 	#print('plotting aspect ratios')
 	velBins = np.linspace(-3,0,100)
 	dBins = 10**(np.linspace(-3,0,100))
 	#print(dBins)
+	'''
 	print('plotting particle properties')
 	fig,ax=plt.subplots(ncols=3,nrows=2,figsize=(15,10))
 	varVec = ['dia','mTot','sRho_tot']
 	for i,var in enumerate(varVec):	
 		print(var)
 		ax[0,i]=plot.plotPropSpecThesis(ax[0,i],dicSettings['heightRange'],dicSettings['heightRes'],mcTableTmp,velBins,var)
-		ax[0,i].set_ylim([mcTableTmp['Temp'].max()+1,mcTableTmp['Temp'].min()-1])
+		ax[0,i].set_ylim([mcTableTmp['Temp'].max()+0.1,mcTableTmp['Temp'].min()-0.1])
 		ax[0,i].set_xlim([-2,0])
 		ax[0,i].tick_params(axis='both',labelsize=16)
 		ax[0,i].text(ax[0,i].get_xlim()[0]+0.04*(ax[0,i].get_xlim()[1]-ax[0,i].get_xlim()[0]),-27,'('+string.ascii_lowercase[i]+')',fontsize=18)
@@ -130,7 +135,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 		print(var)
 		ax[1,i]=plot.plotPropSpecThesis(ax[1,i],dicSettings['heightRange'],dicSettings['heightRes'],mcTableTmp,velBins,var)
 		ax[1,i].set_xlim([-2,0])
-		ax[1,i].set_ylim([mcTableTmp['Temp'].max()+1,mcTableTmp['Temp'].min()-1])
+		ax[1,i].set_ylim([mcTableTmp['Temp'].max()+.1,mcTableTmp['Temp'].min()-.1])
 		ax[1,i].tick_params(axis='both',labelsize=16)
 		ax[1,i].text(ax[1,i].get_xlim()[0]+0.04*(ax[1,i].get_xlim()[1]-ax[1,i].get_xlim()[0]),-27,'('+string.ascii_lowercase[i+3]+')',fontsize=18)
 		ax[1,i].grid(ls='-.')
@@ -146,6 +151,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	plt.savefig(inputPath+'properties.png')
 	plt.close()
 	#quit()
+	'''
 	#-- plot number of superparticles per grid cell
 	
 	nz = float(inputPath.split('nz')[1].split('_')[0])
@@ -155,9 +161,9 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	plot.plotHeightProf(nz,mcTable,inputPath,dicSettings)
 	print('plotting PSD')
 	mBins = 10**(np.linspace(-12,-9,100))
-	plot.plotPSD(mcTable,dicSettings,inputPath,mBins,'mTot')
-	dBins = 10**(np.linspace(-6,-3,100))*1e6
-	plot.plotPSD(mcTable,dicSettings,inputPath,dBins,'dia',fac=1e6,xlim=[0,10**3],ticks=[0,100,200,300,400,500,600,700,800,900,1000])
+	plot.plotPSD(mcTable,dicSettings,inputPath,mBins,'mTot',heightEdge0=1900,unit='[kg]',sepMono=True,yscale='log',xscale='log')
+	dBins = 10**(np.linspace(-6,-2.5,100))
+	plot.plotPSD(mcTable,dicSettings,inputPath,dBins,'dia',heightEdge0=1900,unit='[m]',sepMono=True,yscale='log',xscale='log')
 
 	if os.path.exists(inputPath+McRadar_Outname):
 		output = xr.open_dataset(inputPath+McRadar_Outname)
