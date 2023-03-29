@@ -67,6 +67,7 @@ dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
 print('loading the McSnow output')
 # now generate a table from the McSnow output.
 mcTable = mcr.getMcSnowTable(dicSettings['dataPath'])
+
 # for trajectories:
 if minmax:
   mcTable = mcTable[(mcTable['sMult']>vmin) & (mcTable['sMult']<=vmax)] 
@@ -74,67 +75,36 @@ if minmax:
 #quit()
 
 times = mcTable['time']
-if allTimes==True:
-	for i,selTime in enumerate(times.unique()):
-		mcTableTmp = mcTable[times==selTime]
-		mcTableTmp = mcTableTmp.sort_values('sHeight')
-		print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
-		outputTime = mcr.fullRadar(dicSettings, mcTableTmp)
-		print(output)
-		for wl in dicSettings['wl']:
-			
-			wlStr = '{:.2e}'.format(wl)
-			if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
-				outputTime['Ze_H_{0}'.format(wlStr)] = outputTime['spec_H_{0}'.format(wlStr)].sum(dim='vel')
-				outputTime['MDV_H_{0}'.format(wlStr)] = (outputTime['spec_H_{0}'.format(wlStr)]*outputTime['vel']).sum(dim='vel')/outputTime['Ze_H_{0}'.format(wlStr)]
-				      
-			else:
-				outputTime['Ze_H_{0}'.format(wlStr)] = outputTime['spec_H_{0}'.format(wlStr)].sum(dim='vel')
-				outputTime['Ze_V_{0}'.format(wlStr)] = outputTime['spec_V_{0}'.format(wlStr)].sum(dim='vel')
-				outputTime['MDV_H_{0}'.format(wlStr)] = (outputTime['spec_H_{0}'.format(wlStr)]*outputTime['vel']).sum(dim='vel')/outputTime['Ze_H_{0}'.format(wlStr)]
-				outputTime['MDV_V_{0}'.format(wlStr)] = (outputTime['spec_V_{0}'.format(wlStr)]*outputTime['vel']).sum(dim='vel')/outputTime['Ze_V_{0}'.format(wlStr)]
-			print(output)
-			print(selTime)
-		outputTime = outputTime.expand_dims(dim={'time':1})
-		outputTime = outputTime.assign_coords(time=np.asarray(selTime).reshape(1))
-		if i == 0:
-			output = outputTime
-		else:
-			output = xr.merge([outputTime,output])  
-	outName = os.environ['freq']+'GHz_output_{mode}_alltimes.nc'.format(mode=dicSettings['scatSet']['mode'])
-	print(outputTime)
-else:
-	if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
-		selTime = mcTable['time'].max()
-		
-		mcTableTmp = mcTable[times==selTime]	
-	else: # if we have trajectories it makes sense to have single_particles = True!!!
-		if single_particle == False:
-			mcTable['sMult'] = 1.0 
-		mcTableTmp = mcTable
-	print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
+if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
+	selTime = mcTable['time'].max()
 	
+	mcTableTmp = mcTable.where(times==selTime,drop=True)	#mcTable[times==selTime]#
+	
+	#quit()
+else: # if we have trajectories it makes sense to have single_particles = True!!!
 	if single_particle == False:
-		#print(mcTableTmp)
-		output = mcr.fullRadar(dicSettings, mcTableTmp)
-		print(output)
-		for wl in dicSettings['wl']:
-			for elv in dicSettings['elv']:
-				wlStr = '{:.2e}'.format(wl)
-				if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
-					output['Ze_H_{0}_elv{1}'.format(wlStr,elv)] = output['spec_H_{0}_elv{1}'.format(wlStr,elv)].sum(dim='vel')
-					output['MDV_H_{0}_elv{1}'.format(wlStr,elv)] = (output['spec_H_{0}_elv{1}'.format(wlStr,elv)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}_elv{1}'.format(wlStr,elv)]
-						  
-				else:
-					output['Ze_H_{0}_elv{1}'.format(wlStr,elv)] = output['spec_H_{0}_elv{1}'.format(wlStr,elv)].sum(dim='vel')
-					output['Ze_V_{0}_elv{1}'.format(wlStr,elv)] = output['spec_V_{0}_elv{1}'.format(wlStr,elv)].sum(dim='vel')
-					output['MDV_H_{0}_elv{1}'.format(wlStr,elv)] = (output['spec_H_{0}_elv{1}'.format(wlStr,elv)]*output['vel']).sum(dim='vel')/output['Ze_H_{0}_elv{1}'.format(wlStr,elv)]
-					output['MDV_V_{0}_elv{1}'.format(wlStr,elv)] = (output['spec_V_{0}_elv{1}'.format(wlStr,elv)]*output['vel']).sum(dim='vel')/output['Ze_V_{0}_elv{1}'.format(wlStr,elv)]
-	
-	else:
-	
-		output = mcr.singleParticleTrajectories(dicSettings, mcTableTmp)
-		print(output)
+		mcTable['sMult'] = 1.0 
+	mcTableTmp = mcTable
+print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
+
+if single_particle == False:
+	output = mcr.fullRadar(dicSettings, mcTableTmp)
+	print(output)
+	if (dicSettings['scatSet']['mode'] == 'SSRGA') or (dicSettings['scatSet']['mode'] == 'Rayleigh') or (dicSettings['scatSet']['mode'] == 'SSRGA-Rayleigh'):
+		output['Ze_H'] = output['spec_H'].sum(dim='vel')
+		output['MDV_H'] = (output['spec_H']*output['vel']).sum(dim='vel')/output['Ze_H']
+	else:	
+		output['Ze_H'] = output['spec_H'].sum(dim='vel')
+		output['Ze_V'] = output['spec_V'].sum(dim='vel')
+		output['Ze_HV'] = output['spec_HV'].sum(dim='vel')
+		output['LDR'] = mcr.lin2db(output['Ze_HV']/output['Ze_H'])
+		output['MDV_H'] = (output['spec_H']*output['vel']).sum(dim='vel')/output['Ze_H']
+		output['MDV_V'] = (output['spec_V']*output['vel']).sum(dim='vel')/output['Ze_V']
+
+else:
+
+	output = mcr.singleParticleTrajectories(dicSettings, mcTableTmp)
+	print(output)
 
 print('saving the output file at: '+inputPath+outName)
 #-- now save it

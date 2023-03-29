@@ -51,22 +51,12 @@ dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
 print('loading the McSnow output')
 # now generate a table from the McSnow output. You can specify xi0, if it is not stored in the table (like in my cases)
 mcTable = mcr.getMcSnowTable(dicSettings['dataPath'])
-#-- now select time step to use (600 Minutes is usually used)
-#print('selecting time step = 600 min  ')
 
 
-mcTable = mcTable.sort_values('sHeight')
-#mcTable = mcTable.assign(sMult=1)
-
-#print(dicSettings)
-#quit()
 try:
   minmax = os.environ['minmax']
   vmin=int(minmax.split('_')[0]); vmax=int(minmax.split('_')[1])
-  print(vmin)
-  print(minmax)
 except:
-  print('no minmax')
   minmax=False
 #minmax='0_350'; vmin=0; vmax=350
 plotTemp=True
@@ -74,14 +64,13 @@ plotTemp=True
 McRadar_Outname = os.environ['McRadarfileName']
 print(McRadar_Outname)
 # plot property spectra from McSnow output. THis is done for all simulations that are NOT a trajectory
-print(experimentID)
-print(inputPath)
 if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	#- read in atmo file to get Temperature information if you want to plot it with that
 	selTime = mcTable['time'].max()
 	times = mcTable['time']
-	mcTable = mcTable.sort_values('sHeight')
-	mcTable = mcTable[times==selTime]
+	#mcTable = mcTable.sort_values('sHeight')
+	mcTable = mcTable.where(times==selTime,drop=True)
+	mcTable = mcTable.sortby('sHeight').set_index(index='sHeight').rename({'index':'sHeight'})
 	
 	atmoFile = np.loadtxt(inputPath+'atmo.dat')
 	plot.plotAtmo(atmoFile,inputPath)
@@ -89,20 +78,12 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	Temp = atmoFile[:,2] -273.15
 	atmoPD = pd.DataFrame(data=Temp,index=height,columns=['Temp'])
 	atmoPD.index.name='sHeight'
-	mcTableNew=mcTable.set_index('sHeight',drop=False)
-	mcTableNew = mcTableNew.rename(columns={'sHeight':'height'})
-	mcTableXR = mcTableNew.to_xarray(); atmoXR = atmoPD.to_xarray()
-	
-	#print(mcTableXR.sHeight.values)
-	#print(mcTableXR.height.values)
-	atmoReindex = atmoXR.reindex_like(mcTableXR,method='nearest')
-	#print(atmoReindex)
-	
-	mcTableTmp = xr.merge([atmoReindex,mcTableXR])
+	atmoXR = atmoPD.to_xarray()
+	atmoReindex = atmoXR.reindex_like(mcTable,method='nearest')
+	mcTableTmp = xr.merge([atmoReindex,mcTable])
 	mcTableTmp = mcTableTmp.to_dataframe()
+
 	mcTableMono = mcTableTmp[mcTableTmp.sNmono==1]
-	print(mcTableMono)
-	print('total mass of Mono ',mcTableMono.mTot.sum())
 	#quit()
 	# now plotting stuff directly from McSnow output but in the shape of a velocity spectrum:
 	#print('plotting aspect ratios')
@@ -169,9 +150,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 		output = xr.open_dataset(inputPath+McRadar_Outname)
 		#outPut1 = xr.open_dataset(inputPath+os.environ['freq']+'GHz_output_{mode}_180_350_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode']))
 		#outPut = xr.merge([outPut,outPut1])
-		print(output)
 		print('now plotting McRadar')
-		
 		#else:			
 		if plotTemp == True:
 			atmoFile = np.loadtxt(inputPath+'atmo.dat')
@@ -179,45 +158,31 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 			Temp = atmoFile[:,2] -273.15
 			atmoPD = pd.DataFrame(data=Temp,index=height,columns=['Temp'])
 			atmoPD.index.name='range'
-			print(atmoPD)
-
 			atmoXR = atmoPD.to_xarray()
 			atmoReindex = atmoXR.reindex_like(output,method='nearest')
 			output = xr.merge([atmoReindex,output])
-
-		if 'alltimes' in McRadar_Outname:
-			plot.plotMomentsAlltime(dicSettings,output,inputPath)
-			output = output.sel(time=selTime)
-			#quit()
-		print(output)
-		#quit()
 		print('plotting spectra')
 		if minmax:
-			plot.plotSpectra(dicSettings,output,inputPath,minmax=minmax,plotTemp=plotTemp,convoluted=convoluted)#,mult_conc=mult_conc)#,convoluted=True)
+			plot.plotSpectra(dicSettings,output,inputPath,minmax=minmax,plotTemp=plotTemp)#,mult_conc=mult_conc)#,convoluted=True)
 		else:
-			plot.plotSpectra(dicSettings,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)#,mult_conc=mult_conc)#,convoluted=True)
+			plot.plotSpectra(dicSettings,output,inputPath,plotTemp=plotTemp)#,mult_conc=mult_conc)#,convoluted=True)
 		print('plotting moments')
 
 		if minmax:
-			plot.plotMoments(dicSettings,output,inputPath,minmax=minmax,plotTemp=plotTemp,convoluted=convoluted,mult_conc=mult_conc)
+			plot.plotMoments(dicSettings,output,inputPath,minmax=minmax,plotTemp=plotTemp)
 		else:
-			plot.plotMoments(dicSettings,output,inputPath,plotTemp=plotTemp,mult_conc=mult_conc,convoluted=convoluted)
+			plot.plotMoments(dicSettings,output,inputPath,plotTemp=plotTemp)
 		print(freq)
 		if len(freq)==2:
 			print('plotting DWR')
-			wlStr1 = '{:.2e}'.format(dicSettings['wl'][0])
-			wlStr2 = '{:.2e}'.format(dicSettings['wl'][1])
-			plot.plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)
-			plot.plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)
+			plot.plotDWR(dicSettings,dicSettings['wl'][0],dicSettings['wl'][1],output,inputPath,plotTemp=plotTemp)
+			plot.plotDWRspectra(dicSettings,dicSettings['wl'][0],dicSettings['wl'][1],output,inputPath,plotTemp=plotTemp)
 		elif len(freq)==3:
 			print('plotting DWR')
-			wlStr1 = '{:.2e}'.format(dicSettings['wl'][0])
-			wlStr2 = '{:.2e}'.format(dicSettings['wl'][1])
-			wlStr3 = '{:.2e}'.format(dicSettings['wl'][2])
-			plot.plotDWR(dicSettings,wlStr1,wlStr2,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)
-			plot.plotDWR(dicSettings,wlStr2,wlStr3,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)
-			plot.plotDWRspectra(dicSettings,wlStr1,wlStr2,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)
-			plot.plotDWRspectra(dicSettings,wlStr2,wlStr3,output,inputPath,plotTemp=plotTemp,convoluted=convoluted)
+			plot.plotDWR(dicSettings,dicSettings['wl'][0],dicSettings['wl'][1],output,inputPath,plotTemp=plotTemp)
+			plot.plotDWR(dicSettings,dicSettings['wl'][0],dicSettings['wl'][2],output,inputPath,plotTemp=plotTemp)
+			plot.plotDWRspectra(dicSettings,dicSettings['wl'][0],dicSettings['wl'][1],output,inputPath,plotTemp=plotTemp)
+			plot.plotDWRspectra(dicSettings,dicSettings['wl'][0],dicSettings['wl'][2],output,inputPath,plotTemp=plotTemp)
 
 
 #- plot ar test setup (with bnd_type==3)
