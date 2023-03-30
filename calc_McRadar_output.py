@@ -56,7 +56,7 @@ print('loading the settings')
 
 #-- load the settings of McSnow domain, as well as elevation you want to plot: 
 if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
-	heightRes = 36
+	heightRes = 50
 else:
 	heightRes = 2
 #In order to avoid volume sampling problems, you have to insert the gridBaseArea as it was defined in the McSnow simulation
