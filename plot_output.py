@@ -90,7 +90,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	velBins = np.linspace(-3,0,100)
 	dBins = 10**(np.linspace(-3,0,100))
 	#print(dBins)
-	'''
+	
 	print('plotting particle properties')
 	fig,ax=plt.subplots(ncols=3,nrows=2,figsize=(15,10))
 	varVec = ['dia','mTot','sRho_tot']
@@ -132,7 +132,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	plt.savefig(inputPath+'properties.png')
 	plt.close()
 	#quit()
-	'''
+	
 	#-- plot number of superparticles per grid cell
 	
 	nz = float(inputPath.split('nz')[1].split('_')[0])
@@ -161,6 +161,10 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 			atmoXR = atmoPD.to_xarray()
 			atmoReindex = atmoXR.reindex_like(output,method='nearest')
 			output = xr.merge([atmoReindex,output])
+		if len(freq)==2:
+			plot.plotOverview(output,dicSettings,inputPath,dicSettings['wl'][0],dicSettings['wl'][1])
+		elif len(freq)==3:
+			plot.plotOverview(output,dicSettings,inputPath,dicSettings['wl'][1],dicSettings['wl'][2])
 		print('plotting spectra')
 		if minmax:
 			plot.plotSpectra(dicSettings,output,inputPath,minmax=minmax,plotTemp=plotTemp)#,mult_conc=mult_conc)#,convoluted=True)
@@ -180,9 +184,9 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 		elif len(freq)==3:
 			print('plotting DWR')
 			plot.plotDWR(dicSettings,dicSettings['wl'][0],dicSettings['wl'][1],output,inputPath,plotTemp=plotTemp)
-			plot.plotDWR(dicSettings,dicSettings['wl'][0],dicSettings['wl'][2],output,inputPath,plotTemp=plotTemp)
+			plot.plotDWR(dicSettings,dicSettings['wl'][1],dicSettings['wl'][2],output,inputPath,plotTemp=plotTemp)
 			plot.plotDWRspectra(dicSettings,dicSettings['wl'][0],dicSettings['wl'][1],output,inputPath,plotTemp=plotTemp)
-			plot.plotDWRspectra(dicSettings,dicSettings['wl'][0],dicSettings['wl'][2],output,inputPath,plotTemp=plotTemp)
+			plot.plotDWRspectra(dicSettings,dicSettings['wl'][1],dicSettings['wl'][2],output,inputPath,plotTemp=plotTemp)
 
 
 #- plot ar test setup (with bnd_type==3)
