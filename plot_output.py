@@ -81,9 +81,9 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	atmoXR = atmoPD.to_xarray()
 	atmoReindex = atmoXR.reindex_like(mcTable,method='nearest')
 	mcTableTmp = xr.merge([atmoReindex,mcTable])
-	mcTableTmp = mcTableTmp.to_dataframe()
+	#mcTableTmp = mcTableTmp.to_dataframe()
 
-	mcTableMono = mcTableTmp[mcTableTmp.sNmono==1]
+	#mcTableMono = mcTableTmp[mcTableTmp.sNmono==1]
 	#quit()
 	# now plotting stuff directly from McSnow output but in the shape of a velocity spectrum:
 	#print('plotting aspect ratios')
@@ -145,7 +145,7 @@ if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
 	plot.plotPSD(mcTable,dicSettings,inputPath,mBins,'mTot',heightEdge0=1900,unit='[kg]',sepMono=True,yscale='log',xscale='log')
 	dBins = 10**(np.linspace(-6,-2.5,100))
 	plot.plotPSD(mcTable,dicSettings,inputPath,dBins,'dia',heightEdge0=1900,unit='[m]',sepMono=True,yscale='log',xscale='log')
-
+	
 	if os.path.exists(inputPath+McRadar_Outname):
 		output = xr.open_dataset(inputPath+McRadar_Outname)
 		#outPut1 = xr.open_dataset(inputPath+os.environ['freq']+'GHz_output_{mode}_180_350_singleParticle.nc'.format(mode=dicSettings['scatSet']['mode']))

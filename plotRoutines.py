@@ -238,19 +238,62 @@ def plotPropSpec(dicSettings,mcTable,velBins,inputPath,prop,savefig=True):
         plt.close()
     else:
         return ax
+def plotOverview(output,dicSettings,inputPath,wl1,wl2):
+	freq1 = (constants.c / wl1)  *1e3 / 1e9
+	freq2 = (constants.c / wl2)  *1e3 / 1e9
+	freq1 = '{:.1f}'.format(freq1)
+	freq2 = '{:.1f}'.format(freq2)
+	print(output)
+	specH90 = mcr.lin2db(output['spec_H'].sel(wavelength=wl2,elevation=90))
+	specH30 = mcr.lin2db(output['spec_H'].sel(wavelength=wl2,elevation=30))
+	specV30 = mcr.lin2db(output['spec_V'].sel(wavelength=wl2,elevation=30))
+	specH90 = specH90.where(specH90 > -40)
+	specH30 = specH30.where(specH30 > -40)
+	specV30 = specV30.where(specV30 > -40)
+	ZDR = specH30 - specV30
+	fig,ax = plt.subplots(ncols=4,figsize=(20,5),sharey=True)
+	DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=90))
+	ax[0].plot(DWR,output['Temp'],lw=2)
+	ax[0].set_ylim([0,-30])	
+	ax[0].set_ylabel('T [°C]',fontsize=24)
+	ax[0].set_xlabel('DWR$_{{{freq1},{freq2}}}$ [dB]'.format(freq1=freq1,freq2=freq2),fontsize=24)
+	
+	ax[1].plot(output['KDP'].sel(wavelength=wl2,elevation=30),output['Temp'],lw=2)
+	ax[1].set_xlabel(r'KDP [°km$^{-1}$]',fontsize=24)
+	
+	p1=ax[2].pcolormesh(output.vel,output.Temp,specH90,vmin=-30,vmax=5,cmap=getNewNipySpectral())
+	cb = plt.colorbar(p1,ax=ax[2])
+	cb.set_label('sZeH [dBz]',fontsize=24)
+	cb.ax.tick_params(labelsize=20)
+	ax[2].set_xlabel(r'Doppler velocity [ms$^{-1}$]',fontsize=24)
+	ax[2].set_xlim([-2,0])
+	p1=ax[3].pcolormesh(output.vel,output.Temp,ZDR,vmin=-1,vmax=5,cmap=getNewNipySpectral())
+	cb = plt.colorbar(p1,ax=ax[3])
+	cb.set_label('sZDR [dB]',fontsize=24)
+	cb.ax.tick_params(labelsize=20)
+	ax[3].set_xlabel(r'Doppler velocity [ms$^{-1}$]',fontsize=24)
+	ax[3].set_xlim([-2,0])
+	for a in ax:
+		a.tick_params(which='both',labelsize=20)
+		a.grid()
+	plt.tight_layout()
+	plt.savefig(inputPath+'Profiles_overview.png')
+	plt.close()
+	
 def plotPropSpecThesis(ax,heightRange,heightRes,mcTable,velBins,prop,savefig=False,cbar=True,gridBaseArea=5.0,diff=False,mcTable1=None):
 # plots the aspect ratios depending on the velocity (so sort of like a Doppler Spectrum)
     
     for i, heightEdge0 in enumerate(heightRange[0:-1]):
-        
+        #print(mcTable)
         heightEdge1 = heightEdge0 + heightRes
         height = heightEdge0+heightRes/2
         
-        mcTableTmp = mcTable[(mcTable['height']>heightEdge0) &
-                             (mcTable['height']<=heightEdge1)].copy()
+        mcTableTmp = mcTable.where((mcTable['sHeight']>heightEdge0) &
+                             (mcTable['sHeight']<=heightEdge1))
+        mcTableTmp = mcTableTmp.to_dataframe()
         if diff == True:
-            mcTableTmp1 = mcTable1[(mcTable1['height']>heightEdge0.values) &
-                     (mcTable1['height']<=heightEdge1.values)].copy()
+            mcTableTmp1 = mcTable1.where((mcTable1['sHeight']>heightEdge0.values) &
+                     (mcTable1['sHeight']<=heightEdge1.values))
 
             binVel,sVel = pd.cut(mcTableTmp1['vel'],bins=velBins,retbins=True)
             #group according to velocity bins
