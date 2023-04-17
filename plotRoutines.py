@@ -243,8 +243,8 @@ def plotOverview(output,dicSettings,inputPath,wl1,wl2):
 	freq2 = (constants.c / wl2)  *1e3 / 1e9
 	freq1 = '{:.1f}'.format(freq1)
 	freq2 = '{:.1f}'.format(freq2)
-	print(output)
-	specH90 = mcr.lin2db(output['spec_H'].sel(wavelength=wl2,elevation=90))
+	
+	specH90 = mcr.lin2db(output['spec_H'].sel(wavelength=wl1,elevation=90)) # Ka-Band reflectivity
 	specH30 = mcr.lin2db(output['spec_H'].sel(wavelength=wl2,elevation=30))
 	specV30 = mcr.lin2db(output['spec_V'].sel(wavelength=wl2,elevation=30))
 	specH90 = specH90.where(specH90 > -40)
@@ -254,20 +254,21 @@ def plotOverview(output,dicSettings,inputPath,wl1,wl2):
 	fig,ax = plt.subplots(ncols=4,figsize=(20,5),sharey=True)
 	DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=90))
 	ax[0].plot(DWR,output['Temp'],lw=2)
-	ax[0].set_ylim([0,-30])	
+	ax[0].set_ylim([0,np.min(output.Temp)-1])	
 	ax[0].set_ylabel('T [°C]',fontsize=24)
 	ax[0].set_xlabel('DWR$_{{{freq1},{freq2}}}$ [dB]'.format(freq1=freq1,freq2=freq2),fontsize=24)
 	
 	ax[1].plot(output['KDP'].sel(wavelength=wl2,elevation=30),output['Temp'],lw=2)
 	ax[1].set_xlabel(r'KDP [°km$^{-1}$]',fontsize=24)
 	
-	p1=ax[2].pcolormesh(output.vel,output.Temp,specH90,vmin=-30,vmax=5,cmap=getNewNipySpectral())
+	p1=ax[2].pcolormesh(output.vel,output.Temp,specH90,vmin=-30,vmax=10,cmap=getNewNipySpectral(),shading='auto')
 	cb = plt.colorbar(p1,ax=ax[2])
 	cb.set_label('sZeH [dBz]',fontsize=24)
+	cb.set_ticks([-30,-25,-20,-15,-10,-5,0,5,10])
 	cb.ax.tick_params(labelsize=20)
 	ax[2].set_xlabel(r'Doppler velocity [ms$^{-1}$]',fontsize=24)
 	ax[2].set_xlim([-2,0])
-	p1=ax[3].pcolormesh(output.vel,output.Temp,ZDR,vmin=-1,vmax=5,cmap=getNewNipySpectral())
+	p1=ax[3].pcolormesh(output.vel,output.Temp,ZDR,vmin=-1,vmax=5,cmap=getNewNipySpectral(),shading='auto')
 	cb = plt.colorbar(p1,ax=ax[3])
 	cb.set_label('sZDR [dB]',fontsize=24)
 	cb.ax.tick_params(labelsize=20)
@@ -505,7 +506,7 @@ def plotMoments(dicSettings,output,inputPath,plotTemp=False,mult_conc=False):
 				if plotTemp == True:
 					saveName = '1d_habit_moments_freq{freq}_elv{elv}_{mode}_Temp.png'.format(freq=freq,elv=elv,mode=dicSettings['scatSet']['mode'])
 					vary = 'Temp';label = ' T [°C]'
-					ylim=([0,-30])
+					ylim=([0,np.min(output.Temp)-1])
 
 				else:
 					saveName = '1d_habit_moments_freq{freq}_elv{elv}_{mode}.png'.format(freq=freq,elv=elv,mode=dicSettings['scatSet']['mode'])
@@ -572,7 +573,7 @@ def plotDWR(dicSettings,wl1,wl2,output,inputPath,plotTemp=False):
 		if plotTemp == True:
 			saveName = '1d_habit_DWR_{freq1}_{freq2}_elv{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=elv,mode=dicSettings['scatSet']['mode'])
 			vary = 'Temp'; varUnit = '[°C]'
-			ylim = [0,-30]
+			ylim = [0,np.min(output.Temp)-1]
 		else:
 			saveName = '1d_habit_DWR_{freq1}_{freq2}_elv{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=elv,mode=dicSettings['scatSet']['mode'])
 			vary = 'range'; varUnit = '[m]'
@@ -602,7 +603,7 @@ def plotDWRspectra(dicSettings,wl1,wl2,output,inputPath,plotTemp=False):
 		if plotTemp == True:
 			saveName = '1d_habit_sDWR_{freq1}_{freq2}_elv{elv}_{mode}_Temp.png'.format(freq1=freq1,freq2=freq2,elv=elv,mode=dicSettings['scatSet']['mode'])
 			vary = 'Temp';varUnit = '[°C]'
-			ylim = [0,-30]
+			ylim = [0,np.min(output.Temp)-1]
 		else:
 			saveName = '1d_habit_sDWR_{freq1}_{freq2}_elv{elv}_{mode}.png'.format(freq1=freq1,freq2=freq2,elv=elv,mode=dicSettings['scatSet']['mode'])
 			vary = 'range'
@@ -616,7 +617,7 @@ def plotDWRspectra(dicSettings,wl1,wl2,output,inputPath,plotTemp=False):
 		specH2 = specH2.where(specH2 > -40)
 
 		DWR =specH1 - specH2
-		plot = axes.pcolormesh(output.vel,output[vary],DWR,vmin=0, vmax=15, cmap=getNewNipySpectral())
+		plot = axes.pcolormesh(output.vel,output[vary],DWR,vmin=0, vmax=15,shading='auto', cmap=getNewNipySpectral())
 		cb = plt.colorbar(plot,ax=axes,pad=0.02,aspect=20)#,ticks=v1)
 		cb.set_label(r'sDWR$_{{{freq1},{freq2}}}$'.format(freq1=freq1,freq2=freq2),fontsize=16)
 		cb.ax.tick_params(labelsize=14)
@@ -646,7 +647,7 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 																							part=dicSettings['scatSet']['particle_name'])
 					specH = mcr.lin2db(output['spec_H_{0}_elv{1}'.format(wlStr,elv)])
 					vary='Temp';label = 'T [°C]'
-					ylim = [0,-30]
+					ylim = [0,np.min(output.Temp)-1]
 				else:
 					saveName = '1d_habit_spectra_freq{wl}_elv{elv}_{mode}_{part}.png'.format(wl=freq,elv=elv,mode=dicSettings['scatSet']['mode'],
 																						part=dicSettings['scatSet']['particle_name'])
@@ -656,7 +657,7 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 					ylim = [0,dicSettings['maxHeight']]
 				fig,ax = plt.subplots(figsize=(5,4))
 				specH = specH.where(specH > -40)
-				plot = ax.pcolormesh(output.vel,output[vary],specH,cmap=getNewNipySpectral(),vmin=-30,vmax=5)
+				plot = ax.pcolormesh(output.vel,output[vary],specH,cmap=getNewNipySpectral(),vmin=-30,vmax=10,shading='auto')
 				cb = plt.colorbar(plot,ax=ax,pad=0.02,aspect=20)#,ticks=v1)
 				cb.set_label(r'sZe$_{\rm Ka}$',fontsize=16)
 				cb.ax.tick_params(labelsize=14)
@@ -683,6 +684,7 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 
 				specH = mcr.lin2db(output['spec_H'].sel(wavelength=wl,elevation=elv))
 				specV = mcr.lin2db(output['spec_V'].sel(wavelength=wl,elevation=elv))
+				
 				specH = specH.where(specH > -40)
 				specV = specV.where(specV > -40)
 				if 'spec_HV' in output:
@@ -690,7 +692,7 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 				ZDR = specH - specV
 				if plotTemp == True:
 					vary = 'Temp'; label='T [°C]'
-					ylim=([0,-30])
+					ylim=([0,np.min(output.Temp)-1])
 				else:
 					vary = 'range'; label='range m'
 					ylim= ([0,dicSettings['maxHeight']])
@@ -699,7 +701,7 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 
 				p1 = axes[0].pcolormesh(output.vel,
 								output[vary],
-								specH,vmin=-30,vmax=5,cmap=getNewNipySpectral())
+								specH,vmin=-30,vmax=10,cmap=getNewNipySpectral(),shading='auto')
 				cb = plt.colorbar(p1,ax=axes[0])
 				cb.set_label('sZeH [dBz]')
 				axes[0].set_xlabel('vel [m/s]')
@@ -715,14 +717,14 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 				if 'spec_HV' in output:
 					p2 = axes[1].pcolormesh(output.vel,
 									output[vary],
-									sLDR,vmin=-35,vmax=-20,cmap=getNewNipySpectral())
+									sLDR,vmin=-35,vmax=-20,cmap=getNewNipySpectral(),shading='auto')
 					cb = plt.colorbar(p2,ax=axes[1])
 					cb.set_label('sLDR [dB]')
 					axes[1].set_title('LDR, freq: {0} GHz, elv: {1}'.format(freq, elv))
 				else:
 					p2 = axes[1].pcolormesh(output.vel,
 									output[vary],
-									specV,vmin=-30,vmax=5,cmap=getNewNipySpectral())
+									specV,vmin=-30,vmax=10,cmap=getNewNipySpectral(),shading='auto')
 					cb = plt.colorbar(p2,ax=axes[1])
 					cb.set_label('sZeH [dBz]')
 					axes[1].set_title('Ze_V_spec, freq: {0} GHz, elv: {1}'.format(freq, elv))
@@ -736,7 +738,7 @@ def plotSpectra(dicSettings,output,inputPath,minmax=None,plotTemp=False):
 				#ZDR.plot(ax=axes[2],vmin=-0.5, vmax=3,cmap=getNewNipySpectral(),cbar_kwargs={'label':'sZDR [dB]'}) 
 				p3 = axes[2].pcolormesh(output.vel,
 								output[vary],
-								ZDR,cmap=getNewNipySpectral(),vmin=-1,vmax=5)
+								ZDR,cmap=getNewNipySpectral(),vmin=-1,vmax=5,shading='auto')
 				cb = plt.colorbar(p3,ax=axes[2])
 				cb.set_label('sZDR [dB]')
 				axes[2].set_title('ZDR freq: {0} GHz, elv: {1}'.format(freq, elv))
@@ -1606,7 +1608,7 @@ def plotRadar(data,var,ax,diff=False,data1=None):
 			specH = data['spec_H_{0}'.format(wlStr)]
 			specH = mcr.lin2db(specH)
 			specH = specH.where(specH > -40)
-			vmin=-30;vmax=5
+			vmin=-30;vmax=10
 			clabel='sZe [dBz]'
 			cmap=getNewNipySpectral()
 			
