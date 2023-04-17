@@ -56,13 +56,14 @@ print('loading the settings')
 
 #-- load the settings of McSnow domain, as well as elevation you want to plot: 
 if ('trajectories' not in experimentID) and ('trajectories' not in inputPath):
-	heightRes = 50
+	heightRes = 36
 else:
 	heightRes = 2
 #In order to avoid volume sampling problems, you have to insert the gridBaseArea as it was defined in the McSnow simulation
-dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',
+dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',#'mass2fr.nc',#inputPath+'mass2fr.nc',
                                elv=elv, freq=freq,gridBaseArea=5.0,maxHeight=int(domTop),
-                               ndgsVal=50,heightRes=heightRes,convolute=convolute,scatSet={'mode':scatMode,'lutPath':lutPath,'particle_name':particle_name,'safeTmatrix':True})
+                               ndgsVal=50,heightRes=heightRes,convolute=convolute,k_theta=0.1,k_phi=0,k_r=0,shear_height0=700,shear_height1=800,
+                               scatSet={'mode':scatMode,'lutPath':lutPath,'particle_name':particle_name,'safeTmatrix':True})
 
 print('loading the McSnow output')
 # now generate a table from the McSnow output.
@@ -85,7 +86,7 @@ else: # if we have trajectories it makes sense to have single_particles = True!!
 	if single_particle == False:
 		mcTable['sMult'] = 1.0 
 	mcTableTmp = mcTable
-print('getting things done :) -> calculating radar variables for '+str(freq)+'GHz')
+print('getting things done :) -> calculating radar variables for '+str(freq)+'Hz')
 
 if single_particle == False:
 	output = mcr.fullRadar(dicSettings, mcTableTmp)
@@ -108,5 +109,5 @@ else:
 
 print('saving the output file at: '+inputPath+outName)
 #-- now save it
-output.to_netcdf(inputPath+outName)
+output.to_netcdf(inputPath+outName)#inputPath+outName)
 
