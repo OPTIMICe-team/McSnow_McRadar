@@ -74,7 +74,7 @@ do
     #minmax_array=(180_350) # 0_180 180_350) # 190_200 210_220 250_260 280_290 310_320 340_350) #210_220 220_230 230_240 240_250 250_260 260_270 270_280 280_290 290_300)
     agg="2" # 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
     dep="1" # 0: no diffusion, 1: vapour diffusion
-    xi0="5" 
+    xi0="50" 
     nz="200"
     iwc="3"
     coll_kern="0" #0:Area, 1:Dmax
@@ -90,8 +90,8 @@ do
     iceicebreak_fpm2_array=(6) # 12 24 48) # default value is 6
     iceicebreak_fpm1=0 # default value is 1
     sp_kern_sig=10
-    timeend="36000" #"6000" #"10800"
-    dt_1dprof="600" #"60" #"3600"
+    timeend="10800" #"6000" #"10800"
+    dt_1dprof="3600" #"60" #"3600"
     
     for (( i_ssat = 0 ; i_ssat < ${#ssat_array[@]} ; i_ssat++ )); do
     ssat=${ssat_array[$i_ssat]}
