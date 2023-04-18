@@ -1,100 +1,50 @@
 #! /bin/bash
 
-#  run script for
-#  validating the SPM implementation on ice particles
-#
-#  tcase_id  103
-#    runs 1d model with a BND zone container on top of the domain.
-#    Initially, particles are located in three 10m-cells above 
-#    the top domain boundary and generated every few seconds 
-#    to maintain the constant -nrp0- number in the three levels
-#    during the run.
-#
-#    This test case is meant to:
-#    
-#    a) exploid more realistic setting with constant influx of ice particles
-#       falling through the top boundary;
-#
-#    b) examine the convergence of the SDM method under sedimentation, 
-#       deposition/sublimation, riming, and aggregation;
-#
-#    c) investigatate the influence vertical resolution by varying 'nz'
-#       for a given height.
-#
-#    d) test storing of the agrregation history (agg_hist >= 0)
-
 
 set -e
 export OMP_NUM_THREADS=4
 
 # pre-scaled variables
-dom_top=${7} #"3000."  # [m]
+dom_top=${5} #"3000."  # [m]
 dom_bottom="0."
-nz=${10}           # number of vertical cells
-xi0=${9} #50          # [RP/SP]
+nz=${8}           # number of vertical cells
+xi0=${7} #50          # [RP/SP]
 dtc=5            # [s]
-nrp=${17}           # [1000 RP/m3]
-lwc="0"          # [1/10000 kg/m3]
-iwc=${11} #"0.001"          # [1/100000 kg/m3]5 0.0001
+nrp=${13}           # [1000 RP/m3]
+lwc=${17}          # [1/10000 kg/m3]
+h1=${18}
+h2=${19}
+iwc=${9} #"0.001"          # [1/100000 kg/m3]5 0.0001
 box_area="500"   # [1/100 m2]
 wdm=10           # [10**-6 kg/m3]
-if [[ $7 -gt $6 ]]; then #if riming in setup
-	rt=1             # rime type: 0-no-riming, 1-cont, 2-stoch
-else
-	rt=0
-fi
-#ncl lower than 6 will fail because of FLOOR(nclrate * grid%dbox * dtc) in mo_sp_nml.f90
+rt=${16}			 # riming type
 vt=3             # terminal velocity: 1) Heymsfield, 2) Khvorostyanov 3) Boehm 
 geo=3            # snow geometry: 1: bulk, 2: fillin, 3: similarity
-agggeo=$5         # ! 1: only aggregates, 2:Joses favorite monomers and aggregates, 3: monomer dependent plates (not really implemented here)
-if [[ "$agggeo" -eq 9999 ]] ; then agggeo=1 ; fi
-agg=${8}          # 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
-dep=1            # 0: no diffusion, 1: vapour diffusion
+
+agg=${6}          # 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
+dep=${15}            # 0: no diffusion, 1: vapour diffusion
 meltt=1           # 0: no melting, 1: melting activated
 multt=0          # 0: no ice multiplication, 1: rime splintering
 coll_effi=1      # 0:constant, 1:Boehm
-coll_kern=${12} #1         #0:Area, 1:Dmax
+very_simple_frag=.FALSE.
+coll_kern=${10} #1         #0:Area, 1:Dmax
 stick=$3		 # 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
-sp_habit=${20}       # 0: mD-relation, 1:habit
+sp_habit=${14}       # 0: mD-relation, 1:habit
 IGF=${21}           # 1: IGF according to CL92, 2: updated IGF + all modifications
 sp_frag=0        # 0: no fragmentation, 1: fragmentation
-atmo=${16}
-iceicebreak_fpm2=${22}
-iceicebreak_fpm1=${23}
-#atmofile='atmo_constLapseRate_RHw100.txt'
-#atmofileID=${atmofile%.*}
-
-#echo $atmofileID
-nugam=${13} #3.545 #1.0    # exponent of gamma distribution used to be 3.545
-mugam=${14} #0.455 #1.0  # used to be 0.455
-if [[ "$stick" -eq 9999 ]] ; then stick=1 ; fi #ssat [1/1000]
-ssat=$2 #read ssat from governing script or set default in next line to 0.01 if ssat is set to 9999 #ssat [1/1000]
-if [[ "$ssat" -eq 9999 ]] ; then ssat=100 ; fi #ssat [1/1000]
+atmo=${12}
 
 model_setup=$4
-bndtype=${15} #2: xi ~ flux cdf, 3: discrete
-nh1=${18}
-nh2=${19}
-nclmass=$6
-ncl=$5
+bndtype=${11} #2: xi ~ flux cdf, 3: discrete
 
-timeend=${24}
-dt_1dprof=${25}
-#give the MCSnowgeom a more telling name
-if [[ "$5" -eq 1 ]]; then agggeo_string="constant"
-elif [[ "$5" -eq 2 ]]; then agggeo_string="binary"
-elif [[ "$5" -eq 3 ]]; then agggeo_string="monodep"
-fi
+timeend=${20}
+dt_1dprof=${21}
 
-# change starting aspect ratio in mo_sp_types line 58!!!
 # name of the experiment
-SUFFNAME="${model_setup}_habit${sp_habit}_IGF${IGF}_xi${xi0}_nz${nz}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}" 
-SUFFNAME="${SUFFNAME}_nrp${nrp}_vt${vt}_coll_kern${coll_kern}_at${agg}_stick${stick}_colleffi${coll_effi}_dt${dep}_bndtype${bndtype}"
-SUFFNAME="${SUFFNAME}_iceicebreak_fpm2_${iceicebreak_fpm2}_fpm1_${iceicebreak_fpm1}"
-SUFFNAME="${SUFFNAME}_nh1${nh1}_nh2${nh2}_ncl${ncl}_nclmass${nclmass}"
-#SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
-#SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
-SUFFNAME="${SUFFNAME}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
+
+SUFFNAME="${model_setup}_habit${sp_habit}_xi${xi0}_nz${nz}_iwc${iwc}_dtc${dtc}" 
+SUFFNAME="${SUFFNAME}_nrp${nrp}_vt${vt}_coll_kern${coll_kern}_at${agg}_stick${stick}_colleffi${coll_effi}_dep${dep}_bndtype${bndtype}"
+SUFFNAME="${SUFFNAME}_ba${box_area}_domtop${dom_top}._timeend${timeend}_dt1dpro${dt_1dprof}_atmo${atmo}_ssat${ssat}"
 
 
 if [ "$1" == "onlyname" ]; then echo ${0##*/}_${SUFFNAME}; exit ; else echo "not_there"; fi
@@ -105,19 +55,22 @@ lwc=$(echo "${lwc}*0.0001" | bc -l)
 iwc=$(echo "${iwc}*0.00001" | bc -l)
 ncl=$(echo "${ncl}*0.0001" | bc -l)
 nclmass=$(echo "${nclmass}*0.00000000001" | bc -l)
+kernsig=$(echo "${kernsig}*0.01" | bc -l)
 #nclmass=$(echo "${nclmass}*0.0001" | bc -l)
+Dmean=$(echo "${Dmean}*0.000001" | bc -l) #Dmean in mum
 
 wdm=$(echo "${wdm}*0.000001" | bc -l)
 box_area=$(echo "${box_area}*0.01" | bc -l)
 h1=$(echo "${h1}*100." | bc -l)
 h2=$(echo "${h2}*100." | bc -l)
 ssat=$(echo "${ssat}*0.001" | bc -l)
+#dtc=$(echo "${dtc}*0.1" | bc -l)
 
 THIS_DIR=$(pwd -P)
 BASE_DIR=${THIS_DIR%/*}
 RUN_DIR=${BASE_DIR}/run
 
-OUT_DIR=${26}/${0##*/}_${SUFFNAME}
+OUT_DIR=${22}/${0##*/}_${SUFFNAME}
 echo "Output directory: ${OUT_DIR}"
 rm -rf ${OUT_DIR} 
 mkdir -p ${OUT_DIR}
@@ -177,14 +130,12 @@ test_case_name = ${0##*/}
   agg_hist    = -1            ! <0: no history, 0: history with near surface sampling, >0: history with the whole domain sampling
   sp_kernel_id = ${agg}       ! 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
   sp_stick_effi =  ${stick}   ! 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
-  !sp_kernel_geo = ${sp_geo}   ! 1: Dmax-kernel, 2:Area-based
-  !sp_coll_effi = ${coll_effi} ! 0: constant, 1:Boehm's parameterization
   coll_kern_type = ${coll_kern} ! 0: Area based, 1: Dmax
   sp_habit = ${sp_habit}                ! 0: m-D-relation, 1: habit prediciton
   sp_frag = 0         ! 0: off, 1: Phillips Fragmentation, 2: updated Fragmentation formulation
-  prolate_inc = .True.      ! switch on interpolation between prolate and cylinder for fall speed
-  iceicebreak_fpm2=${iceicebreak_fpm2}
-  iceicebreak_fpm1=${iceicebreak_fpm1}
+  iceicebreak_fpm1=0
+  iceicebreak_fpm2=0
+  
 /
 &grid_nml
   dom_top    = ${dom_top}     ! [m]  domain top
@@ -197,10 +148,10 @@ test_case_name = ${0##*/}
   ssat       = ${ssat}           ! [1] saturation
   !h1         = ${h1}
   !h2         = ${h2}
-  nh1        = ${nh1} 
-  nh2        = ${nh2}
+  !nh1        = ${nh1} 
+  !nh2        = ${nh2}
  !atmofile = ${atmofile} ! name of atmofile
- IGF_id = ${IGF}           ! 1: IGF of CL92, 2: updated IGF + all modifications
+ !IGF_id = ${IGF}           ! 1: IGF of CL92, 2: updated IGF + all modifications
 /
  
 EOF
