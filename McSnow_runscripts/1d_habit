@@ -60,7 +60,7 @@ sp_frag=0        # 0: no fragmentation, 1: fragmentation
 atmo=${16}
 iceicebreak_fpm2=${22}
 iceicebreak_fpm1=${23}
-frag=2
+#frag=2
 sp_kern_sig=${24}
 
 #atmofile='atmo_constLapseRate_RHw100.txt'
@@ -79,9 +79,9 @@ nh1=${18}
 nh2=${19}
 nclmass=$6
 ncl=$5
-
-timeend=${26}
-dt_1dprof=${27}
+Dmode=${26}
+timeend=${27}
+dt_1dprof=${28}
 #give the MCSnowgeom a more telling name
 if [[ "$5" -eq 1 ]]; then agggeo_string="constant"
 elif [[ "$5" -eq 2 ]]; then agggeo_string="binary"
@@ -92,7 +92,7 @@ fi
 # name of the experiment
 SUFFNAME="${model_setup}_habit${sp_habit}_IGF${IGF}_xi${xi0}_nz${nz}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}" 
 SUFFNAME="${SUFFNAME}_nrp${nrp}_vt${vt}_coll_kern${coll_kern}_at${agg}_stick${stick}_colleffi${coll_effi}_dep${dep}_bndtype${bndtype}"
-SUFFNAME="${SUFFNAME}_iceicebreak_fpm2_${iceicebreak_fpm2}_fpm1_${iceicebreak_fpm1}_frag${frag}_sp_kern_sig${sp_kern_sig}"
+SUFFNAME="${SUFFNAME}_iceicebreak_fpm2_${iceicebreak_fpm2}_fpm1_${iceicebreak_fpm1}_frag${sp_frag}_sp_kern_sig${sp_kern_sig}_Dmode${Dmode}"
 
 #SUFFNAME="${SUFFNAME}_nh1${nh1}_nh2${nh2}_ncl${ncl}_nclmass${nclmass}"
 #SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_ba${box_area}_domtop${dom_top}._atmo${atmo}_ssat${ssat}"
@@ -108,6 +108,8 @@ lwc=$(echo "${lwc}*0.0001" | bc -l)
 iwc=$(echo "${iwc}*0.00001" | bc -l)
 ncl=$(echo "${ncl}*0.0001" | bc -l)
 nclmass=$(echo "${nclmass}*0.00000000001" | bc -l)
+Dmode=$(echo "${Dmode}*0.000001" | bc -l)
+sp_kern_sig=$(echo "${sp_kern_sig}*0.01" | bc -l)
 #nclmass=$(echo "${nclmass}*0.0001" | bc -l)
 
 wdm=$(echo "${wdm}*0.000001" | bc -l)
@@ -120,7 +122,7 @@ THIS_DIR=$(pwd -P)
 BASE_DIR=${THIS_DIR%/*}
 RUN_DIR=${BASE_DIR}/run
 
-OUT_DIR=${28}/${0##*/}_${SUFFNAME}
+OUT_DIR=${29}/${0##*/}_${SUFFNAME}
 echo "Output directory: ${OUT_DIR}"
 rm -rf ${OUT_DIR} 
 mkdir -p ${OUT_DIR}
@@ -184,7 +186,7 @@ test_case_name = ${0##*/}
   time_end   = ${timeend} !36000 !6000. !18000. !36000.         ! [s] end time 36000
   dt_1dprof  = ${dt_1dprof} !600. !60 !600. !1800.          ! [s] time step for output to file ! 60 for trajectories, otherwise 600??
   dt_2dprof  = 600.          ! [s] time step for output to file
-  collbreakup_type = 0
+  !collbreakup_type = 0
    interpol_pp = .True.
 /
 &sp_nml
@@ -210,11 +212,12 @@ test_case_name = ${0##*/}
   !sp_coll_effi = ${coll_effi} ! 0: constant, 1:Boehm's parameterization
   coll_kern_type = ${coll_kern} ! 0: Area based, 1: Dmax
   sp_habit = ${sp_habit}                ! 0: m-D-relation, 1: habit prediciton
-  sp_frag = ${frag}        ! 0: off, 1: Phillips Fragmentation, 2: updated Fragmentation formulation
+  sp_frag = ${sp_frag}        ! 0: off, 1: Phillips Fragmentation, 2: updated Fragmentation formulation
   prolate_inc = .True.      ! switch on interpolation between prolate and cylinder for fall speed
   iceicebreak_fpm2=${iceicebreak_fpm2}
   iceicebreak_fpm1=${iceicebreak_fpm1}
   sp_kern_sig = ${sp_kern_sig}
+  Dmode=${Dmode} ! mode of PSD from which fragments are sampled (default: 150um)
 /
 &grid_nml
   dom_top    = ${dom_top}     ! [m]  domain top
