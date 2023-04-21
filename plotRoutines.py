@@ -243,9 +243,32 @@ def plotOverview(output,dicSettings,inputPath,wl1,wl2,wl3=None):
 	freq2 = (constants.c / wl2)  *1e3 / 1e9
 	freq1 = '{:.1f}'.format(freq1)
 	freq2 = '{:.1f}'.format(freq2)
+	
 	if wl3:
 		freq3 = (constants.c / wl3)  *1e3 / 1e9
 		freq3 = '{:.1f}'.format(freq3)
+	
+	if freq1 == '9.6':
+		band1='X'
+	elif freq1 == '35.5':
+		band1 = 'Ka'
+	elif freq1 == '94.0':
+		band1='W'
+
+	if freq2 == '35.5':
+		band2 = 'Ka'
+	elif freq2=='9.6':
+		band2='X'
+	elif freq2 == '94.0':
+		band2='W'	
+
+	if freq3 == '35.5':
+		band3 = 'Ka'
+	elif freq3=='9.6':
+		band3='X'
+	elif freq3 == '94.0':
+		band3='W'	
+	
 	
 	specH90 = mcr.lin2db(output['spec_H'].sel(wavelength=wl1,elevation=90)) # Ka-Band reflectivity
 	specH30 = mcr.lin2db(output['spec_H'].sel(wavelength=wl2,elevation=30))
@@ -257,18 +280,18 @@ def plotOverview(output,dicSettings,inputPath,wl1,wl2,wl3=None):
 	
 	fig,ax = plt.subplots(ncols=4,figsize=(20,5),sharey=True)
 	DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=90))
-	ax[0].plot(DWR,output['Temp'],lw=2,c='C0',label='DWR$_{{{freq1},{freq2}}}$ 90° elv')
+	ax[0].plot(DWR,output['Temp'],lw=2,c='C0',label='DWR$_{{{freq1},{freq2}}}$, 90° elv'.format(freq1=band1,freq2=band2))
 	DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=30)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=30))
-	ax[0].plot(DWR,output['Temp'],lw=2,c='C0',ls='--',label='30° elv')
+	ax[0].plot(DWR,output['Temp'],lw=2,c='C0',ls=':',label='30° elv')
 	if wl3:
-		DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl3,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=90))
-		ax[0].plot(DWR,output['Temp'],lw=2,c='C1',label='DWR$_{{{freq3},{freq1}}}$')
-		DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl3,elevation=30)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=30))
-		ax[0].plot(DWR,output['Temp'],lw=2,c='C1',ls='--')
+		DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl3,elevation=90))
+		ax[0].plot(DWR,output['Temp'],lw=2,c='C1',label='DWR$_{{{freq2},{freq3}}}$'.format(freq2=band2,freq3=band3))
+		DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=30)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl3,elevation=30))
+		ax[0].plot(DWR,output['Temp'],lw=2,c='C1',ls=':')
 	ax[0].set_ylim([0,np.min(output.Temp)-1])	
 	ax[0].set_ylabel('T [°C]',fontsize=24)
 	ax[0].set_xlabel('DWR [dB]'.format(freq1=freq1,freq2=freq2),fontsize=24)
-	
+	ax[0].legend(fontsize=12)
 	ax[1].plot(output['KDP'].sel(wavelength=wl2,elevation=30),output['Temp'],lw=2)
 	ax[1].set_xlabel(r'KDP [°km$^{-1}$]',fontsize=24)
 	
