@@ -238,11 +238,14 @@ def plotPropSpec(dicSettings,mcTable,velBins,inputPath,prop,savefig=True):
         plt.close()
     else:
         return ax
-def plotOverview(output,dicSettings,inputPath,wl1,wl2):
+def plotOverview(output,dicSettings,inputPath,wl1,wl2,wl3=None):
 	freq1 = (constants.c / wl1)  *1e3 / 1e9
 	freq2 = (constants.c / wl2)  *1e3 / 1e9
 	freq1 = '{:.1f}'.format(freq1)
 	freq2 = '{:.1f}'.format(freq2)
+	if wl3:
+		freq3 = (constants.c / wl3)  *1e3 / 1e9
+		freq3 = '{:.1f}'.format(freq3)
 	
 	specH90 = mcr.lin2db(output['spec_H'].sel(wavelength=wl1,elevation=90)) # Ka-Band reflectivity
 	specH30 = mcr.lin2db(output['spec_H'].sel(wavelength=wl2,elevation=30))
@@ -251,12 +254,20 @@ def plotOverview(output,dicSettings,inputPath,wl1,wl2):
 	specH30 = specH30.where(specH30 > -40)
 	specV30 = specV30.where(specV30 > -40)
 	ZDR = specH30 - specV30
+	
 	fig,ax = plt.subplots(ncols=4,figsize=(20,5),sharey=True)
 	DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=90))
-	ax[0].plot(DWR,output['Temp'],lw=2)
+	ax[0].plot(DWR,output['Temp'],lw=2,c='C0',label='DWR$_{{{freq1},{freq2}}}$ 90° elv')
+	DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=30)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl2,elevation=30))
+	ax[0].plot(DWR,output['Temp'],lw=2,c='C0',ls='--',label='30° elv')
+	if wl3:
+		DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl3,elevation=90)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=90))
+		ax[0].plot(DWR,output['Temp'],lw=2,c='C1',label='DWR$_{{{freq3},{freq1}}}$')
+		DWR = mcr.lin2db(output['Ze_H'].sel(wavelength=wl3,elevation=30)) - mcr.lin2db(output['Ze_H'].sel(wavelength=wl1,elevation=30))
+		ax[0].plot(DWR,output['Temp'],lw=2,c='C1',ls='--')
 	ax[0].set_ylim([0,np.min(output.Temp)-1])	
 	ax[0].set_ylabel('T [°C]',fontsize=24)
-	ax[0].set_xlabel('DWR$_{{{freq1},{freq2}}}$ [dB]'.format(freq1=freq1,freq2=freq2),fontsize=24)
+	ax[0].set_xlabel('DWR [dB]'.format(freq1=freq1,freq2=freq2),fontsize=24)
 	
 	ax[1].plot(output['KDP'].sel(wavelength=wl2,elevation=30),output['Temp'],lw=2)
 	ax[1].set_xlabel(r'KDP [°km$^{-1}$]',fontsize=24)
@@ -1388,29 +1399,55 @@ def plotIniTempMaxArTempAr(mcTable,inputPath,prop,zoom=False,ylog=False,xlog=Fal
   plt.savefig(inputPath+prop+figName)
   plt.show()
   
-def plotHeightProf(nz,mcTable,inputPath,dicSettings):
-  '''
-  plot height profiles of superparticle number concentration. 
-  '''
-  
-  dz = dicSettings['maxHeight']/nz
-  Heightrange = np.arange(0,dicSettings['maxHeight'],dz)
-  heightCenterBin = Heightrange[0:-1] + dz/2
-  #binheight,sheight = pd.cut(mcTable['sHeight'],bins=Heightrange,retbins=True)
-  #group according to velocity bins
-  grouped = mcTable.groupby_bins('sHeight', Heightrange)
-  #grouped = mcTable.groupby(binheight)
-  Nsuper = grouped.count()['sMult']#.assign_coords({'sHeight':heightCenterBin})
-  
-  #height = sheight+dz/2
-  fig,ax = plt.subplots(figsize=(5,5))
-  ax.plot(Nsuper.values,heightCenterBin)
-  ax.set_xlabel('# superparticle')
-  ax.set_ylabel('height [m]')
-  ax.grid()
-  plt.tight_layout()
-  plt.savefig(inputPath+'number_sParticle.png')
-  plt.close()
+def plotconcHeightProf(particle,mcTable,inputPath,dicSettings,nz=200):
+	'''
+	plot height profiles of superparticle number concentration. 
+	or of real particles
+	'''
+	if particle == 'Super':
+		dz = dicSettings['maxHeight']/nz
+		Heightrange = np.arange(0,dicSettings['maxHeight'],dz)
+		heightCenterBin = Heightrange[0:-1] + dz/2
+		#binheight,sheight = pd.cut(mcTable['sHeight'],bins=Heightrange,retbins=True)
+		#group according to velocity bins
+		grouped = mcTable.groupby_bins('sHeight', Heightrange)
+		#grouped = mcTable.groupby(binheight)
+		Nsuper = grouped.count()['sMult']#.assign_coords({'sHeight':heightCenterBin})
+	
+		#height = sheight+dz/2
+		fig,ax = plt.subplots(figsize=(5,5))
+		ax.plot(Nsuper.values,heightCenterBin)
+		ax.set_xlabel('# superparticle')
+		ax.set_ylabel('height [m]')
+		ax.grid()
+		plt.tight_layout()
+		plt.savefig(inputPath+'number_sParticle.png')
+		plt.close()
+	else:
+		dz = 10
+		Heightrange = np.arange(0,dicSettings['maxHeight'],dz)
+		heightCenterBin = Heightrange[0:-1] + dz/2
+		#binheight,sheight = pd.cut(mcTable['sHeight'],bins=Heightrange,retbins=True)
+		#group according to velocity bins
+		mcTableMono = mcTable.where(mcTable['sNmono']==1)
+		mcTableAgg = mcTable.where(mcTable['sNmono']>1)
+		groupedMono = mcTableMono.groupby_bins('sHeight', Heightrange)
+		groupedAgg = mcTableAgg.groupby_bins('sHeight', Heightrange)
+		groupedTot = mcTable.groupby_bins('sHeight', Heightrange)
+		concMono = groupedMono.sum()['sMult']
+		concAgg = groupedAgg.sum()['sMult']
+		concTot = groupedTot.sum()['sMult']
+		fig,ax = plt.subplots(figsize=(5,5))
+		ax.plot((concTot/(dicSettings['gridBaseArea']*dz)).values,heightCenterBin,label='All')
+		ax.plot((concAgg/(dicSettings['gridBaseArea']*dz)).values,heightCenterBin,label='Aggregates')
+		ax.plot((concMono/(dicSettings['gridBaseArea']*dz)).values,heightCenterBin,label='Mono')
+		ax.set_xlabel('concentration per m$^{3}$')
+		ax.set_ylabel('height [m]')
+		ax.legend()
+		ax.grid()
+		plt.tight_layout()
+		plt.savefig(inputPath+'concentration_realParticle.png')
+		plt.close()
   #print(Heightrange)
   #quit()  
   
