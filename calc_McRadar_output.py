@@ -42,7 +42,8 @@ elif 'SSRGA' in scatMode:
 elif scatMode == 'wisdom' or scatMode == 'table':
 	lutPath = lutPath + 'Tmatrix'
 domTop = inputPath.split('domtop')[1].split('_')[0].split('.')[0]
-
+box_area = inputPath.split('ba')[1].split('_')[0]
+box_area=float(box_area)/100
 try:
   minmax = os.environ['minmax'] 
   vmin=int(minmax.split('_')[0]); vmax=int(minmax.split('_')[1]) 
@@ -61,8 +62,8 @@ else:
 	heightRes = 2
 #In order to avoid volume sampling problems, you have to insert the gridBaseArea as it was defined in the McSnow simulation
 dicSettings = mcr.loadSettings(dataPath=inputPath+'mass2fr.nc',#'mass2fr.nc',#inputPath+'mass2fr.nc',
-                               elv=elv, freq=freq,gridBaseArea=5.0,maxHeight=int(domTop),
-                               ndgsVal=50,heightRes=heightRes,convolute=convolute,k_theta=0.1,k_phi=0,k_r=0,shear_height0=700,shear_height1=800,
+                               elv=elv, freq=freq,gridBaseArea=box_area,maxHeight=int(domTop),
+                               ndgsVal=50,heightRes=heightRes,convolute=convolute,#k_theta=0.1,k_phi=0,k_r=0,#shear_height0=700,shear_height1=800,
                                scatSet={'mode':scatMode,'lutPath':lutPath,'particle_name':particle_name,'safeTmatrix':True})
 
 print('loading the McSnow output')
