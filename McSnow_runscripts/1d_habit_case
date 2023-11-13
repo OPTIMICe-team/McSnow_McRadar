@@ -1,0 +1,271 @@
+#! /bin/bash
+
+#  run script for
+#  validating the SPM implementation on ice particles
+#
+#  tcase_id  103
+#    runs 1d model with a BND zone container on top of the domain.
+#    Initially, particles are located in three 10m-cells above 
+#    the top domain boundary and generated every few seconds 
+#    to maintain the constant -nrp0- number in the three levels
+#    during the run.
+#
+#    This test case is meant to:
+#    
+#    a) exploid more realistic setting with constant influx of ice particles
+#       falling through the top boundary;
+#
+#    b) examine the convergence of the SDM method under sedimentation, 
+#       deposition/sublimation, riming, and aggregation;
+#
+#    c) investigatate the influence vertical resolution by varying 'nz'
+#       for a given height.
+#
+#    d) test storing of the agrregation history (agg_hist >= 0)
+
+
+set -e
+export OMP_NUM_THREADS=4
+
+model_setup=$2 
+dom_bottom="0."
+domTop=$3
+atmo=$4
+ssat=$5
+atmoFileName=$6 
+xi0=$7
+nz=$8
+bndtype=$9 
+timeend=${10}
+dt_1dprof=${11} 
+box_area="500"   # [1/100 m2]
+meltt=1           # 0: no melting, 1: melting activated
+lwc="0"          # [1/10000 kg/m3]
+#- aggregation/riming parameters
+agg=${12}
+stick=${13}
+agggeo=${14}
+am=${15}
+bm=${16}
+aa=${17}
+ba=${18} 
+sp_kern_sig=${19} 
+coll_kern=${20} 
+dtc=5            # [s]
+rm=10           # [10**-6 kg/m3]
+rt=0
+geo=3            # snow geometry: 1: bulk, 2: fillin, 3: similarity
+vt=3             # terminal velocity: 1) Heymsfield, 2) Khvorostyanov 3) Boehm 
+
+#- depo parameters
+dep=${21}
+sp_habit=${22} 
+IGF=${23} 
+
+#- setup of nucleation
+iwc=${24} 
+ncl=${25} 
+nclmass=${26} 
+nugam=${27} 
+mugam=${28} 
+nrp=${29} 
+nh1=${30} 
+nh2=${31} 
+nucl=${32}
+nhh1=3000
+nhh2=4900
+ncl2=200
+
+#- fragmentation setup
+iceicebreak_fpm2=${33} 
+iceicebreak_fpm1=${34}  
+Dmode=${35} 
+multt=0          # 0: no ice multiplication, 1: rime splintering
+sp_frag=0        # 0: no fragmentation, 1: fragmentation
+
+# pre-scaled variables
+
+
+
+# change starting aspect ratio in mo_sp_types line 58!!!
+# name of the experiment
+#SUFFNAME="${model_setup}_habit${sp_habit}_IGF${IGF}_xi${xi0}_xi2Mode30xi0_nz${nz}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}" 
+#SUFFNAME="${model_setup}_habit${sp_habit}_xi${xi0}_nz${nz}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}_nrp${nrp}" 
+#SUFFNAME="${SUFFNAME}_nrp${nrp}_spkernsig${sp_kern_sig}_am${am}_bm${bm}_aa${aa}_ba${ba}"
+#SUFFNAME="${SUFFNAME}_nrp${nrp}_vt${vt}_mDM96_coll_kern${coll_kern}_at${agg}_spkernsig${sp_kern_sig}_dep${dep}_bndtype${bndtype}"
+
+#SUFFNAME="${SUFFNAME}_iceicebreak_fpm2_${iceicebreak_fpm2}_fpm1_${iceicebreak_fpm1}_frag${sp_frag}_sp_kern_sig${sp_kern_sig}_Dmode${Dmode}"
+#SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_ba${box_area}_domtop${domTop}._atmo${atmo}_ssat${ssat}"
+
+# case study
+SUFFNAME="${model_setup}_habit${sp_habit}_IGF${IGF}_xi${xi0}_nz${nz}_iwc${iwc}_nugam${nugam}_mugam${mugam}_dtc${dtc}" 
+SUFFNAME="${SUFFNAME}_nh1${nh1}_nh2${nh2}_nhh1${nhh1}_nhh2${nhh2}_ncl${ncl}_ncl2${ncl2}_xi050xi0_nclmass${nclmass}_nuclType${nucl}_at${agg}_stick${stick}_spkernsig${sp_kern_sig}" #stick${stick}_ #nuclType${nucl}_
+SUFFNAME="${SUFFNAME}_timeend${timeend}_dt1d${dt_1dprof}_nz${nz}_ba${box_area}_domtop${domTop}._atmo${atmo}_${atmoFileName}" #commitb6633bf #_ssat${ssat}_vt3" #
+
+
+#SUFFNAME="${SUFFNAME}_ba${box_area}_domtop${domTop}._timeend${timeend}_dt1dpro${dt_1dprof}_atmo${atmo}_atmoFile${atmofile}"
+#SUFFNAME="${SUFFNAME}_ba${box_area}_domtop${domTop}_atmo${atmo}_atmoFile${atmofile}"
+
+# Trjaecotires
+#SUFFNAME="${model_setup}_habit${sp_habit}_IGF${IGF}_at${agg}_ssat${ssat}_ba${box_area}_domtop${domTop}_allTimes_D1mum" 
+
+
+if [ "$1" == "onlyname" ]; then echo ${0##*/}_${SUFFNAME}; exit ; else echo "not_there"; fi
+
+# scaled variables
+nrp=$(echo "${nrp}*1000" | bc -l)
+lwc=$(echo "${lwc}*0.0001" | bc -l)
+iwc=$(echo "${iwc}*0.00001" | bc -l)
+ncl=$(echo "${ncl}*0.0001" | bc -l)
+ncl2=$(echo "${ncl2}*0.0001" | bc -l)
+nclmass=$(echo "${nclmass}*0.0000000000001" | bc -l)
+Dmode=$(echo "${Dmode}*0.000001" | bc -l)
+sp_kern_sig=$(echo "${sp_kern_sig}*0.01" | bc -l)
+#nclmass=$(echo "${nclmass}*0.0001" | bc -l)
+
+rm=$(echo "${rm}*0.000001" | bc -l)
+box_area=$(echo "${box_area}*0.01" | bc -l)
+h1=$(echo "${h1}*100." | bc -l)
+h2=$(echo "${h2}*100." | bc -l)
+ssat=$(echo "${ssat}*0.001" | bc -l)
+
+THIS_DIR=$(pwd -P)
+BASE_DIR=${THIS_DIR%/*}
+RUN_DIR=${BASE_DIR}/run
+
+OUT_DIR=${36}/${0##*/}_${SUFFNAME}
+echo "Output directory: ${OUT_DIR}"
+
+rm -rf ${OUT_DIR} 
+mkdir -p ${OUT_DIR}
+
+echo $atmofile
+
+# touch a file with Rev. number
+if [[ $(git describe 2> /dev/null) ]]; then
+  REV=`cd ${BASE_DIR}; git describe`
+  touch ${OUT_DIR}/Rev_$REV
+else
+  echo "WARNING  No Git-Revision file added."
+fi
+
+echo "domTop${domTop}"
+echo "ssat${ssat}"
+echo "stick${stick}"
+echo "testcase${model_setup}"
+echo "ncl${ncl}"
+echo "nclmass${nclmass}"
+echo "agg${agg}"
+echo "xi0${xi0}"
+echo "nz${nz}"
+echo "iwc${iwc}"
+echo "coll_kern${coll_kern}"
+echo "nugam${nugam}"
+echo "mugam${mugam}"
+echo "bndtype${bndtype}"
+echo "atmo${atmo}"
+echo "nrp0${nrp}"
+echo "habit${sp_habit}"
+echo "IGF${IGF}"
+echo "iceicebreak_fpm2${iceicebreak_fpm2}"
+echo "iceicebreak_fpm1${iceicebreak_fpm1}"
+echo "sp_kern_sig${sp_kern_sig}"
+echo "dep${dep}"
+echo "timeend${timeend}"
+echo "dt_1dpro${dt_1dprof}"
+echo "am${am}"
+echo "bm${bm}"
+echo "aa${aa}"
+echo "ba${ba}"
+
+
+cd ${OUT_DIR}
+
+cp ${BASE_DIR}/build/src/MCSNOW .
+cp ${BASE_DIR}/input/* .
+
+# write namelist to file
+cat > input.nml <<EOF
+test_case_name = ${0##*/}
+
+&general_nml
+  msg_level  = 6
+  tcase_id   = 105            ! unique test case id
+  ini_type   = 2             ! 0: check, 1: box model, 2: 1D model
+  bnd_type   = ${bndtype}              ! 0: zero flux, 1: const xi=xi0, 2: xi ~ flux cdf 4: use 2mom for calculating fluxes
+  agggeo_type = ${agggeo_type} ! 2: mitchell, 3: monodependent, 4: dendrite aggregates
+  snowgeo_type = ${geo}       ! 1: bulk, 2: fillin, 3: similarity
+  nucl_type  = ${nucl}              ! 0: off, 1: constant, 2: Meyers scheme
+  rime_type  = ${rt}          ! 0: no riming, 1: continuous, 2: stochastic
+  multiplication_type = ${multt} ! 0: no ice multiplication, 1: rime splintering
+  diffusion_type =${dep}      ! 0: no diffusion, 1: vapour diffusion
+  mergeNoTresh  = 1000        ! number of super-particles per cell, if threshold is exceeded, similar particle get merged
+  mergeRatioLimit = 0.0      ! mass ratio below which two similar drops get merged
+  melt_type  = ${meltt}        ! 0: no melting, 1: melting activated
+  time_end   = ${timeend} !36000 !6000. !18000. !36000.         ! [s] end time 36000
+  dt_1dprof  = ${dt_1dprof} !600. !60 !600. !1800.          ! [s] time step for output to file ! 60 for trajectories, otherwise 600??
+  dt_2dprof  = 600.          ! [s] time step for output to file
+  collbreakup_type = 0
+   !interpol_pp = .True.
+  !interpol_atmos = .True.
+/
+&sp_nml
+  iwc         = ${iwc}      ! [kg/m3] ice water content
+  lwc0        = ${lwc}        ! [kg/m3] liquid water content in the 'LWC zone'
+  nrp0        = ${nrp}        ! [1/m3] initial number density of ice particles
+  xi0         = ${xi0}        ! [1] number of RP per SP
+  nu_gam      = ${nugam}      ! [1] gamma distribution exponent
+  mu_gam      = ${mugam}           ! [1] generalized gamma distribution exponent 
+  maxTotalNoSps = 10240000
+  dtc         = ${dtc}        ! [s] time step of collision
+  !idtmc       = 1             ! [1] (dtm=dtc/idtmc) dtm is time step of sedi.
+  idtgm       = 1             ! [1] (dtg=dtm/idtgc) dtg is time step of cond./depo.
+  sigma0      = 0.62          ! kernel density estimation factor
+  nclrate     = ${ncl}        ! [SP/s] num. new SP in 'nucleation zone' (1d-model)
+  nclrate2     = ${ncl2}        ! [SP/s] num. new SP in 'nucleation zone 2. layer' (1d-model)
+  nclmass     = ${nclmass}    !should be 1...e-9 from Joses calculations       ! mean mass of particles after nucleation
+  rm          = ${rm}        ! [m] mean droplet radius in the 1d-model ice particle riming 
+  sp_vterm_id = ${vt}         ! 1:Heymsfield, 2:Khvorostyanov, 3: Boehm
+  agg_hist    = -1            ! <0: no history, 0: history with near surface sampling, >0: history with the whole domain sampling
+  sp_kernel_id = ${agg}       ! 0: no aggregation. 1: Golovin kernel 2: hydrodynamic kernel
+  sp_stick_effi =  ${stick}   ! 0: E_s=1, 1: PK97, 2: Connolly12, 3: 0.5*Connolly12
+  !sp_coll_effi = ${coll_effi} ! 0: constant, 1:Boehm's parameterization
+  coll_kern_type = ${coll_kern} ! 0: Area based, 1: Dmax
+  sp_habit = ${sp_habit}                ! 0: m-D-relation, 1: habit prediciton
+  sp_frag = ${sp_frag}        ! 0: off, 1: Phillips Fragmentation, 2: updated Fragmentation formulation
+  !prolate_inc = .True.      ! switch on interpolation between prolate and cylinder for fall speed
+  !iceicebreak_fpm2=${iceicebreak_fpm2}
+  !iceicebreak_fpm1=${iceicebreak_fpm1}
+  sp_kern_sig = ${sp_kern_sig}
+  !Dmode=${Dmode} ! mode of PSD from which fragments are sampled (default: 150um)
+  !unr_alf=${am} ! prefactor of mass size relation for aggregates
+  !unr_bet=${bm}  ! exponent of mass size relation for aggregates
+  !unr_sig=${aa}  ! prefactor of area size relation for aggregates
+  !unr_gam=${ba}  ! exponent of area size relation for aggregates
+/
+&grid_nml
+  dom_top    = ${domTop}     ! [m]  domain top
+  dom_bottom = ${dom_bottom}  ! [m]  domain top
+  box_area   = ${box_area}    ! [m2] box area (to form quasi 3d domain)
+  nz         = ${nz}          ! [1]  number of vertical grid cells
+/
+&atmo_nml
+  atmo_type  = ${atmo}              ! 1: idealized profiles; 2: ECMWF profiles
+  ssat       = ${ssat}           ! [1] saturation
+  !h1         = ${h1}
+  !h2         = ${h2}
+  nh1        = ${nh1} 
+  nh2        = ${nh2}
+  nhh1       = ${nhh1}
+  nhh2       = ${nhh2}
+  area_factor = 1
+  atmofile = "${atmoFileName}.txt" ! name of atmofile
+ IGF_id = ${IGF}           ! 1: IGF of CL92, 2: updated IGF + all modifications
+/
+ 
+EOF
+
+# run
+time ./MCSNOW
+
+exit 0
